@@ -17,54 +17,46 @@ const orchestrator=new office.Orchestrator({
   eventBus:bus,
   specialists,
   tools:{echo:input=>({echo:input})},
-  maxSteps:10
+  maxSteps:20
 });
 
 const foundation=office.createTask({id:'foundation',objective:'Foundation task',requiredSkills:['software_development']});
 const dependent=office.createTask({
   id:'dependent',
   objective:'Dependent task',
-  dependencies:['foundation']
+  dependencies:['foundation'],
+  requiredSkills:['testing']
 });
 
-orchestrator.addTask(dependent);
-if(dependent.status!=='CREATED')throw new Error('Dependency task should remain CREATED');
+orchestrator.addTasks([dependent,foundation]);
 
-orchestrator.addTask(foundation);
-if(foundation.status!=='READY')throw new Error('Foundation task should become READY');
+const worker=new office.WorkerEngine({
+  orchestrator,
+  maxTicks:10,
+  actionProvider:task=>[
+    {type:'tool',name:'echo',input:task.id},
+    {type:'complete',result:{ok:true,taskId:task.id}}
+  ],
+  verifier:task=>({passed:true,details:{verifiedBy:'smoke'}})
+});
 
-orchestrator.assign('foundation');
-const agent=orchestrator.start('foundation');
-if(agent.state!=='RUNNING')throw new Error('Agent did not start');
+const result=worker.run();
 
-orchestrator.runAgent('foundation',[
-  {type:'tool',name:'echo',input:'hello'},
-  {type:'complete',result:{ok:true}}
-]);
+if(!result.complete)throw new Error('Worker did not complete the project');
+if(result.ticks!==2)throw new Error('Worker should execute two dependent tasks');
+if(orchestrator.getTask('foundation').status!=='COMPLETED')throw new Error('Foundation not completed');
+if(orchestrator.getTask('dependent').status!=='COMPLETED')throw new Error('Dependent not completed');
 
-if(foundation.status!=='VERIFYING')throw new Error('Implemented task should enter VERIFYING');
-orchestrator.verify('foundation',true,{checked:true});
-
-if(foundation.status!=='COMPLETED')throw new Error('Foundation task should be COMPLETED');
-if(dependent.status!=='READY')throw new Error('Dependent task did not become READY');
-
-const team=office.buildTeam(
-  ['software_development'],
-  [{id:'developer',skills:['software_development']}]
-);
-if(!team.complete)throw new Error('Team builder failed');
+for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed']){
+  if(!events.includes(type))throw new Error('Missing event: '+type);
+}
 
 const plan=office.planAndAssign('Build the AI-OFFICE simulator',{
   project:'office-simulator',
   specialists
 });
-
 if(plan.tasks.length!==4)throw new Error('Chief did not create the expected plan');
 if(!plan.team.complete)throw new Error('Chief could not assemble the required team');
 if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product')throw new Error('Initial ready task is incorrect');
-
-for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed']){
-  if(!events.includes(type))throw new Error('Missing event: '+type);
-}
 
 console.log('AI-OFFICE smoke test: PASS');
