@@ -1,4 +1,5 @@
 const office=require('../core');
+const {run:runWorkerFixRetest}=require('./worker_fix_retest');
 
 (async()=>{
 const learningStore=new office.ExperienceStore();
@@ -91,6 +92,8 @@ const plan=office.planAndAssign('Build the AI-OFFICE simulator',{project:'office
 if(plan.tasks.length!==4) throw new Error('Chief did not create the expected plan');
 if(!plan.team.complete) throw new Error('Chief could not assemble the required team');
 if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product') throw new Error('Initial ready task is incorrect');
+await runWorkerFixRetest();
+
 const memory=new office.CompanyMemory();
 memory.addLesson(lesson);
 if(memory.search('validation').length!==1) throw new Error('Company memory retrieval failed');
