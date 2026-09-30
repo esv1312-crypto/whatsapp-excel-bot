@@ -19,6 +19,7 @@ const {ProjectSupervisor}=require('./supervisor');
 const {GitHubEvidenceCollector}=require('./github_evidence');
 const {VerificationController}=require('./verification_controller');
 const {EvidenceInterpreter}=require('./evidence_interpreter');
+const {VerificationPolicy}=require('./verification_policy');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -44,6 +45,7 @@ module.exports={
   GitHubEvidenceCollector,
   VerificationController,
   EvidenceInterpreter,
+  VerificationPolicy,
   plan,
   planAndAssign
 };
