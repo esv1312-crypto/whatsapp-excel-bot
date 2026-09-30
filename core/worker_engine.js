@@ -5,7 +5,9 @@ class WorkerEngine {
     this.maxTicks=options.maxTicks||20;
     this.ticks=0;
     this.actionProvider=options.actionProvider||(()=>[{type:'complete',result:{ok:true}}]);
-    this.verifier=options.verifier||(()=>({passed:true,details:{automatic:true}}));
+    this.verifier=options.verifier||null;
+    this.maxFixesPerTask=options.maxFixesPerTask||3;
+    this.fixCounts=new Map();
   }
 
   canContinue(){return this.ticks<this.maxTicks&&this.orchestrator.canContinue();}
@@ -22,8 +24,14 @@ class WorkerEngine {
     await this.orchestrator.runAgent(task.id,actions);
     const current=this.orchestrator.getTask(task.id);
     if(current.status==='VERIFYING'){
-      const verification=await this.verifier(current,this.orchestrator);
-      this.orchestrator.verify(current.id,verification.passed,verification.details);
+      if (typeof this.orchestrator.verifyWithEvidence === 'function' && this.orchestrator.verificationController) {
+        const verification=await this.orchestrator.verifyWithEvidence(current.id);
+        if (!verification.evaluation.passed) this._prepareFix(current, verification);
+      } else if (this.verifier) {
+        const verification=await this.verifier(current,this.orchestrator);
+        this.orchestrator.verify(current.id,verification.passed,verification.details);
+        if (!verification.passed) this._prepareFix(current, {evaluation: verification});
+      }
     }
     return {progressed:true,taskId:task.id,status:this.orchestrator.getTask(task.id).status};
   }
@@ -36,6 +44,19 @@ class WorkerEngine {
       if(!result.progressed) break;
     }
     return {history,complete:this._isComplete(),ticks:this.ticks};
+  }
+
+  _prepareFix(task, verification){
+    const count=this.fixCounts.get(task.id)||0;
+    if(count>=this.maxFixesPerTask) return null;
+    this.fixCounts.set(task.id,count+1);
+    if(typeof this.orchestrator.beginFix==='function') this.orchestrator.beginFix(task.id);
+    if(typeof this.orchestrator.addTask==='function') {
+      const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[]};
+      this.orchestrator.addTask(fix);
+      return fix;
+    }
+    return null;
   }
 
   _isComplete(){
