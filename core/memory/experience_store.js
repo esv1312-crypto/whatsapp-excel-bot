@@ -40,6 +40,7 @@ class ExperienceStore {
     if (!text) return [];
     const terms = new Set(text.split(/\W+/).filter(term => term.length > 2));
     return this.experiences
+      .filter(entry => !query.project || entry.project === query.project)
       .map(entry => {
         const candidate = [entry.action, entry.result, entry.failure, entry.solution, entry.lesson, ...(entry.skills || [])]
           .filter(Boolean).join(' ').toLowerCase();
