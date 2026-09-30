@@ -15,6 +15,7 @@ const {GitHubRuntimeAdapter}=require('./tools/github_runtime_adapter');
 const {ProjectDiscovery}=require('./project_discovery');
 const {ProjectContextBuilder}=require('./project_context');
 const {analyzeProjectContext,planFromContext}=require('./project_state');
+const {ProjectSupervisor}=require('./supervisor');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -36,6 +37,7 @@ module.exports={
   ProjectContextBuilder,
   analyzeProjectContext,
   planFromContext,
+  ProjectSupervisor,
   plan,
   planAndAssign
 };
