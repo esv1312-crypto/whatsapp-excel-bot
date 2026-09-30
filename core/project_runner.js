@@ -80,17 +80,20 @@ class ProjectRunner {
 
     const watchdog=this.watchdog||new Watchdog({eventBus:this.eventBus,timeoutMs:this.options.heartbeatTimeoutMs||30000});
 
+    // Recover persisted work before creating the worker so construction cannot
+    // silently change task state or bypass recovery events.
+    const recoveryManager=this.options.recoveryManager||new RecoveryManager({orchestrator,stateStore:this.stateStore,eventBus:this.eventBus});
+    const recovery=recoveryManager.recover();
+
     const worker=new WorkerEngine({
       orchestrator,
       actionProvider:this.actionProvider,
       verifier:this.verifier,
       maxTicks:this.maxTicks,
       maxFixesPerTask:this.options.maxFixesPerTask||3,
-      watchdog
+      watchdog,
+      resumeOnStart:false
     });
-
-    const recoveryManager=this.options.recoveryManager||new RecoveryManager({orchestrator,stateStore:this.stateStore,eventBus:this.eventBus});
-    const recovery=recoveryManager.recover();
 
     const scheduler=new OfficeScheduler({
       worker,
