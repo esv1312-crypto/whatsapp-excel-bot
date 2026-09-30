@@ -1,8 +1,27 @@
+const TOOL_RISK=Object.freeze({
+  READ:'read',
+  WRITE:'write',
+  COMMIT:'commit',
+  CI:'ci',
+  RELEASE:'release',
+  DANGEROUS:'dangerous'
+});
+
+const RISK_ORDER=Object.freeze({
+  [TOOL_RISK.READ]:0,
+  [TOOL_RISK.WRITE]:1,
+  [TOOL_RISK.COMMIT]:2,
+  [TOOL_RISK.CI]:3,
+  [TOOL_RISK.RELEASE]:4,
+  [TOOL_RISK.DANGEROUS]:5
+});
+
 class ToolRouter {
   constructor(options = {}) {
     this.tools = new Map();
     this.policies = options.policies || {};
     this.eventBus = options.eventBus;
+    this.approvalPolicy = options.approvalPolicy || null;
     for (const tool of options.tools || []) this.register(tool);
   }
 
@@ -18,7 +37,7 @@ class ToolRouter {
     return Array.from(this.tools.values()).map(tool => ({
       name: tool.name,
       description: tool.description || '',
-      risk: tool.risk || 'low'
+      risk: tool.risk || TOOL_RISK.READ
     }));
   }
 
@@ -36,15 +55,31 @@ class ToolRouter {
       return { allowed: false, reason: 'POLICY_DENIED' };
     }
 
-    return { allowed: true };
+    const risk = tool.risk || TOOL_RISK.READ;
+    const threshold = context.maxRisk || null;
+    if (threshold && RISK_ORDER[risk] > RISK_ORDER[threshold]) {
+      return { allowed: false, reason: 'RISK_LIMIT' };
+    }
+
+    const approvalRequired = this._requiresApproval(tool, context);
+    if (approvalRequired && context.approved!==true) {
+      return { allowed: false, reason: 'APPROVAL_REQUIRED' };
+    }
+
+    return { allowed: true, risk, approvalRequired };
   }
 
   async execute(name, input, context = {}) {
     const decision = this.canUse(name, context);
-    if (!decision.allowed) throw new Error(`Tool ${name} denied: ${decision.reason}`);
+    if (!decision.allowed) {
+      this._emit(decision.reason === 'APPROVAL_REQUIRED' ? 'approval.requested' : 'tool.denied', {
+        name, input, context, reason: decision.reason
+      });
+      throw new Error(`Tool ${name} denied: ${decision.reason}`);
+    }
 
     const tool = this.tools.get(name);
-    this._emit('tool.requested', { name, input, context });
+    this._emit('tool.requested', { name, input, context, risk: decision.risk });
     const startedAt = Date.now();
 
     try {
@@ -65,11 +100,10 @@ class ToolRouter {
     }
   }
 
-  _emit(type, payload) {
-    if (this.eventBus && typeof this.eventBus.emit === 'function') {
-      this.eventBus.emit(type, { type, ...payload });
-    }
+  _requiresApproval(tool, context) {
+    if (typeof this.approvalPolicy === 'function') return this.approvalPolicy(tool, context) === true;
+    return RISK_ORDER[tool.risk || TOOL_RISK.READ] >= RISK_ORDER[TOOL_RISK.COMMIT];
   }
 }
 
-module.exports = { ToolRouter };
+module.exports = { ToolRouter, TOOL_RISK, RISK_ORDER };
