@@ -33,6 +33,35 @@ const worker=new office.WorkerEngine({
   verifier:async task=>({passed:true,details:{verifiedBy:'smoke'}})
 });
 
+const learningStore2=new office.ExperienceStore();
+const learningLessons2=new office.LessonEngine();
+const learningCompany2=new office.CompanyMemory();
+const learningProject2=new office.ProjectMemory();
+const learningBus2=new office.EventBus();
+const learningEvents=[];
+learningBus2.on('lesson.created',event=>learningEvents.push(event));
+const learningOrchestrator=new office.Orchestrator({
+  eventBus:learningBus2,
+  specialists:[{id:'developer',skills:['software_development']}],
+  tools:{echo:async input=>({echo:input})},
+  experienceStore:learningStore2,
+  lessonEngine:learningLessons2,
+  companyMemory:learningCompany2,
+  projectMemory:learningProject2,
+  maxSteps:10
+});
+const learningTask=office.createTask({id:'learning-cycle',project:'learning-project',objective:'Repair validation failure',requiredSkills:['software_development']});
+learningOrchestrator.addTask(learningTask);
+learningOrchestrator.refresh();
+learningOrchestrator.assign(learningTask.id);
+learningOrchestrator.start(learningTask.id);
+await learningOrchestrator.runAgent(learningTask.id,[{type:'complete',result:{ok:true}}]);
+learningOrchestrator.verify(learningTask.id,true,{verified:true});
+if(learningStore2.list().length!==1) throw new Error('Learning cycle did not record experience');
+if(learningCompany2.list().length!==1) throw new Error('Verified lesson did not reach company memory');
+if(learningProject2.list('learning-project').length!==1) throw new Error('Verified lesson did not reach project memory');
+if(!learningEvents.length) throw new Error('Learning event was not emitted');
+
 const result=await worker.run();
 if(!result.complete) throw new Error('Worker did not complete the project');
 if(result.ticks!==3) throw new Error('Worker should use two execution ticks plus one completion check');
