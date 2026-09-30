@@ -59,7 +59,7 @@ function dependenciesReady(task,tasksById){
 }
 
 function markReadyIfPossible(task,tasksById){
-  if(task.status!==TASK_STATUS.CREATED) return false;
+  if(task.status!==TASK_STATUS.CREATED && task.status!==TASK_STATUS.WAITING) return false;
   if(!dependenciesReady(task,tasksById)) return false;
   transitionTask(task,TASK_STATUS.READY);
   return true;
