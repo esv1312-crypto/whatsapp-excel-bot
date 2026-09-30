@@ -60,6 +60,12 @@ class ProjectRunner {
       boot.project.tasks=boot.plan.tasks.map(task=>task.id);
     }
 
+    // Persist the project envelope before execution starts so a crash can be
+    // resumed even if the process stops before the final ProjectRunner update.
+    if(this.stateStore && typeof this.stateStore.update==='function') {
+      this.stateStore.update({projects:{[boot.project.id]:boot.project}});
+    }
+
     const orchestrator=new Orchestrator({
       eventBus:this.eventBus,
       stateStore:this.stateStore,
