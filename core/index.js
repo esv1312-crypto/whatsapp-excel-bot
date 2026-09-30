@@ -7,6 +7,7 @@ const {EventBus}=require('./events');
 const {Orchestrator}=require('./orchestrator');
 const {AgentRuntime}=require('./agent_runtime');
 const {WorkerEngine}=require('./worker_engine');
+const {ToolRouter}=require('./tool_router');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -19,6 +20,7 @@ module.exports={
   Orchestrator,
   AgentRuntime,
   WorkerEngine,
+  ToolRouter,
   plan,
   planAndAssign
 };
