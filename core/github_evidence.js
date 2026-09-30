@@ -4,6 +4,9 @@ class GitHubEvidenceCollector {
     if (typeof options.fetchWorkflowRuns !== 'function') throw new Error('GitHubEvidenceCollector requires fetchWorkflowRuns');
     this.fetchCommit = options.fetchCommit;
     this.fetchWorkflowRuns = options.fetchWorkflowRuns;
+    this.fetchJobs = options.fetchJobs || null;
+    this.fetchSteps = options.fetchSteps || null;
+    this.fetchArtifacts = options.fetchArtifacts || null;
     this.getCombinedStatus = options.getCombinedStatus;
   }
   async collect(input = {}) {
