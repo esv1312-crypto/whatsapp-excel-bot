@@ -106,6 +106,10 @@ class ToolRouter {
     }
   }
 
+  _emit(type, data) {
+    if (this.eventBus && typeof this.eventBus.emit === 'function') this.eventBus.emit(type, data);
+  }
+
   _requiresApproval(tool, context) {
     if (typeof this.approvalPolicy === 'function') return this.approvalPolicy(tool, context) === true;
     return RISK_ORDER[tool.risk || TOOL_RISK.READ] >= RISK_ORDER[TOOL_RISK.COMMIT];
