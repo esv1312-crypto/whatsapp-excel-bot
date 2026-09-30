@@ -4,6 +4,7 @@ require('./tool_router_guardrails');
 require('./state_store');
 require('./event_store');
 require('./scheduler');
+require('./project_bootstrap');
 
 (async()=>{
 const learningStore=new office.ExperienceStore();
