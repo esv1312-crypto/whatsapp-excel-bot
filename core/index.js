@@ -18,6 +18,7 @@ const {analyzeProjectContext,planFromContext}=require('./project_state');
 const {ProjectSupervisor}=require('./supervisor');
 const {GitHubEvidenceCollector}=require('./github_evidence');
 const {VerificationController}=require('./verification_controller');
+const {EvidenceInterpreter}=require('./evidence_interpreter');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -42,6 +43,7 @@ module.exports={
   ProjectSupervisor,
   GitHubEvidenceCollector,
   VerificationController,
+  EvidenceInterpreter,
   plan,
   planAndAssign
 };
