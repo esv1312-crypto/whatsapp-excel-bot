@@ -62,5 +62,8 @@ const plan=office.planAndAssign('Build the AI-OFFICE simulator',{project:'office
 if(plan.tasks.length!==4) throw new Error('Chief did not create the expected plan');
 if(!plan.team.complete) throw new Error('Chief could not assemble the required team');
 if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product') throw new Error('Initial ready task is incorrect');
+const memory=new office.CompanyMemory();
+memory.addLesson(lesson);
+if(memory.search('validation').length!==1) throw new Error('Company memory retrieval failed');
 console.log('AI-OFFICE smoke test: PASS');
 })().catch(error=>{console.error(error);process.exitCode=1;});
