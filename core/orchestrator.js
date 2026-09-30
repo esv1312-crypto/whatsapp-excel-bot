@@ -108,7 +108,7 @@ class Orchestrator{
 
   verify(taskId,passed,details=null){
     const task=this._requireTask(taskId);
-    task.verification={passed,details};
+    task.verification={passed,details,evidence:details?.evidence||null};
     this._learn(task,{verification:task.verification});
     transitionTask(task,passed?TASK_STATUS.COMPLETED:TASK_STATUS.FAIL);
     this._emit(passed?'task.completed':'task.failed',task);
