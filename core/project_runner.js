@@ -6,6 +6,7 @@ const {Watchdog}=require('./watchdog');
 const {ProjectDiscovery}=require('./project_discovery');
 const {ProjectContextBuilder}=require('./project_context');
 const {analyzeProjectContext,planFromContext}=require('./project_state');
+const {RecoveryManager}=require('./recovery_manager');
 
 class ProjectRunner {
   constructor(options={}) {
@@ -88,6 +89,9 @@ class ProjectRunner {
       watchdog
     });
 
+    const recoveryManager=this.options.recoveryManager||new RecoveryManager({orchestrator,stateStore:this.stateStore,eventBus:this.eventBus});
+    const recovery=recoveryManager.recover();
+
     const scheduler=new OfficeScheduler({
       worker,
       maxCycles:this.options.maxCycles||this.maxTicks,
@@ -106,6 +110,7 @@ class ProjectRunner {
       contextAnalysis,
       contextPlan,
       plan:boot.plan,
+      recovery,
       execution,
       orchestrator,
       worker,
