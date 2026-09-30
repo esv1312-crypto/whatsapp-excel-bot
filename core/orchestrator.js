@@ -145,7 +145,8 @@ class Orchestrator{
       verification:{...(task.verification || {}),...(result.verification || {})},
       evidence:result.verification?.evidence || task.verification?.evidence || null,
       failure:result.evaluation?.missing || null,
-      solution:task.result || null
+      solution:task.result?.solution || null,
+      lesson:task.result?.lesson || task.lesson || result.lesson || null
     });
     const lesson=this.lessonEngine.extract(experience);
     if(!lesson || lesson.verified!==true) return lesson;
