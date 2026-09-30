@@ -22,10 +22,12 @@ class ProjectRunner {
     this.maxTicks=options.maxTicks||50;
     this.maxSteps=options.maxSteps||100;
     this.watchdog=options.watchdog||null;
+    this._eventStoreBound=false;
   }
 
   async run(input={}) {
     if(!input.goal) throw new Error('Project goal is required');
+    this._bindEventStore();
 
     const project=input.project||{id:input.projectId,name:input.projectName||input.goal,repository:input.repository,branch:input.branch||'main'};
     const boot=bootstrapProject(project,{goal:input.goal,blueprint:input.blueprint,specialists:this.specialists});
@@ -79,6 +81,13 @@ class ProjectRunner {
       scheduler,
       status:execution.complete?'COMPLETED':'INCOMPLETE'
     };
+  }
+  _bindEventStore(){
+    if(this._eventStoreBound || !this.eventBus || !this.eventStore || typeof this.eventBus.on!=='function' || typeof this.eventStore.append!=='function') return;
+    const types=['task.created','task.ready','task.assigned','task.started','task.implemented','task.verifying','task.completed','task.failed','task.fixing','task.retest','agent.started','agent.completed','agent.heartbeat','agent.heartbeat.stopped','tool.requested','tool.completed','tool.failed','tool.denied','approval.requested','watchdog.stalled','watchdog.recovered','watchdog.escalated','lesson.created'];
+    for(const type of types) this.eventBus.on(type,event=>this.eventStore.append({...event,type,project:event.project||event.task?.project||null}));
+    if(typeof this.eventStore.load==='function') this.eventStore.load();
+    this._eventStoreBound=true;
   }
 }
 
