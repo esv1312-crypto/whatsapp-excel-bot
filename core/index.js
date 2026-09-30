@@ -21,6 +21,7 @@ const {VerificationController}=require('./verification_controller');
 const {EvidenceInterpreter}=require('./evidence_interpreter');
 const {VerificationPolicy}=require('./verification_policy');
 const {GitHubCommitTool}=require('./tools/github_commit');
+const {GitHubCommitRuntimeAdapter}=require('./tools/github_commit_runtime_adapter');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -48,6 +49,7 @@ module.exports={
   EvidenceInterpreter,
   VerificationPolicy,
   GitHubCommitTool,
+  GitHubCommitRuntimeAdapter,
   plan,
   planAndAssign
 };
