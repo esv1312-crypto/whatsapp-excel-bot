@@ -8,8 +8,8 @@ class WorkerEngine {
     this.verifier=options.verifier||null;
     this.maxFixesPerTask=options.maxFixesPerTask||3;
     this.fixCounts=new Map();
-    this.experienceStore=options.experienceStore||orchestrator.experienceStore||null;
-    this.lessonEngine=options.lessonEngine||orchestrator.lessonEngine||null;
+    this.experienceStore=options.experienceStore||this.orchestrator.experienceStore||null;
+    this.lessonEngine=options.lessonEngine||this.orchestrator.lessonEngine||null;
   }
 
   canContinue(){return this.ticks<this.maxTicks&&this.orchestrator.canContinue();}
