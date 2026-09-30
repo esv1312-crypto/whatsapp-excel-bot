@@ -18,6 +18,11 @@ class WorkerEngine {
     if(!this.canContinue()) return {progressed:false,reason:'LIMIT_REACHED'};
     this.ticks++;
     this.orchestrator.refresh();
+    const pendingVerification=this.orchestrator.listTasks().find(item=>item.status==='VERIFYING');
+    if(pendingVerification){
+      await this._verifyTask(pendingVerification);
+      return {progressed:true,taskId:pendingVerification.id,status:this.orchestrator.getTask(pendingVerification.id).status};
+    }
     const task=this.orchestrator.listTasks().find(item=>item.status==='READY');
     if(!task) return {progressed:false,reason:this._isComplete()?'PROJECT_COMPLETE':'WAITING_FOR_READY_TASK'};
     this.orchestrator.assign(task.id);
@@ -25,16 +30,7 @@ class WorkerEngine {
     const actions=await this.actionProvider(task,this.orchestrator);
     await this.orchestrator.runAgent(task.id,actions);
     const current=this.orchestrator.getTask(task.id);
-    if(current.status==='VERIFYING'){
-      if (typeof this.orchestrator.verifyWithEvidence === 'function' && this.orchestrator.verificationController) {
-        const verification=await this.orchestrator.verifyWithEvidence(current.id);
-        if (!verification.evaluation.passed) this._prepareFix(current, verification);
-      } else if (this.verifier) {
-        const verification=await this.verifier(current,this.orchestrator);
-        this.orchestrator.verify(current.id,verification.passed,verification.details);
-        if (!verification.passed) this._prepareFix(current, {evaluation: verification});
-      }
-    }
+    if(current.status==='VERIFYING') await this._verifyTask(current);
     const finalTask=this.orchestrator.getTask(task.id);
     if(finalTask && finalTask.parentTask) this._completeRepair(finalTask);
     return {progressed:true,taskId:task.id,status:this.orchestrator.getTask(task.id).status};
@@ -48,6 +44,21 @@ class WorkerEngine {
       if(!result.progressed) break;
     }
     return {history,complete:this._isComplete(),ticks:this.ticks};
+  }
+
+  async _verifyTask(task){
+    if(typeof this.orchestrator.verifyWithEvidence === 'function' && this.orchestrator.verificationController){
+      const verification=await this.orchestrator.verifyWithEvidence(task.id);
+      if(!verification.evaluation.passed) this._prepareFix(task,verification);
+      return verification;
+    }
+    if(this.verifier){
+      const verification=await this.verifier(task,this.orchestrator);
+      this.orchestrator.verify(task.id,verification.passed,verification.details);
+      if(!verification.passed) this._prepareFix(task,{evaluation:verification});
+      return verification;
+    }
+    return null;
   }
 
   _completeRepair(fixTask){
