@@ -24,14 +24,7 @@ function plan(goal,options={}){
   const requiredSkills=[...new Set(tasks.flatMap(t=>t.requiredSkills))];
   const team=buildTeam(requiredSkills,options.specialists||[]);
 
-  return {
-    goal,
-    project,
-    requiredSkills,
-    tasks,
-    team,
-    status:'PLANNED'
-  };
+  return {goal,project,requiredSkills,tasks,team,status:'PLANNED'};
 }
 
 function defaultBlueprint(goal){
@@ -39,7 +32,8 @@ function defaultBlueprint(goal){
     {
       id:'product',
       objective:`Define product requirements and acceptance criteria for: ${goal}`,
-      requiredSkills:['product']
+      requiredSkills:['product_management'],
+      dependencies:[]
     },
     {
       id:'architecture',
@@ -56,7 +50,7 @@ function defaultBlueprint(goal){
     {
       id:'qa',
       objective:`Verify the implementation for: ${goal}`,
-      requiredSkills:['quality_assurance'],
+      requiredSkills:['testing'],
       dependencies:['implementation']
     }
   ];
