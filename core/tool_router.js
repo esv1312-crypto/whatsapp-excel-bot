@@ -22,6 +22,7 @@ class ToolRouter {
     this.policies = options.policies || {};
     this.eventBus = options.eventBus;
     this.approvalPolicy = options.approvalPolicy || null;
+    this.policy = options.policy || null;
     for (const tool of options.tools || []) this.register(tool);
   }
 
@@ -44,6 +45,11 @@ class ToolRouter {
   canUse(name, context = {}) {
     const tool = this.tools.get(name);
     if (!tool) return { allowed: false, reason: 'UNKNOWN_TOOL' };
+
+    if (this.policy && typeof this.policy.evaluate === 'function') {
+      const policyDecision=this.policy.evaluate(tool,context);
+      if (!policyDecision.allowed) return policyDecision;
+    }
 
     const allowedTools = context.allowedTools;
     if (Array.isArray(allowedTools) && !allowedTools.includes(name)) {
