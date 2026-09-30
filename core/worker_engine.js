@@ -33,6 +33,8 @@ class WorkerEngine {
         if (!verification.passed) this._prepareFix(current, {evaluation: verification});
       }
     }
+    const finalTask=this.orchestrator.getTask(task.id);
+    if(finalTask && finalTask.parentTask) this._completeRepair(finalTask);
     return {progressed:true,taskId:task.id,status:this.orchestrator.getTask(task.id).status};
   }
 
@@ -46,13 +48,21 @@ class WorkerEngine {
     return {history,complete:this._isComplete(),ticks:this.ticks};
   }
 
+  _completeRepair(fixTask){
+    const parent=this.orchestrator.getTask(fixTask.parentTask);
+    if(!parent || parent.status!=='FIXING') return;
+    if(fixTask.result && fixTask.result.commitSha) parent.commitSha=fixTask.result.commitSha;
+    this.orchestrator.retest(parent.id);
+  }
+
   _prepareFix(task, verification){
     const count=this.fixCounts.get(task.id)||0;
     if(count>=this.maxFixesPerTask) return null;
     this.fixCounts.set(task.id,count+1);
     if(typeof this.orchestrator.beginFix==='function') this.orchestrator.beginFix(task.id);
     if(typeof this.orchestrator.addTask==='function') {
-      const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[]};
+      const evaluation=verification.evaluation||{};
+      const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[],reason:evaluation.missing||evaluation.missingChecks||[],verification:evaluation};
       this.orchestrator.addTask(fix);
       return fix;
     }
