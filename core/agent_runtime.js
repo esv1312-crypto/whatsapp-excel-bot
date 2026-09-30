@@ -27,47 +27,32 @@ class AgentRuntime {
     return this.context();
   }
 
-  run(action) {
+  async run(action) {
     if (this.state !== 'RUNNING') throw new Error('Agent is not running');
     if (this.steps >= this.maxSteps) throw new Error('Agent step limit reached');
     if (!action || typeof action !== 'object') throw new Error('Action is required');
-
     this.steps++;
-
-    if (action.type === 'tool') {
-      return this.callTool(action.name, action.input);
-    }
-
+    if (action.type === 'tool') return this.callTool(action.name, action.input);
     if (action.type === 'complete') {
       this.state = 'COMPLETED';
-      this._emit('agent.completed', { result: action.result });
-      return { completed: true, result: action.result };
+      this._emit('agent.completed', {result:action.result});
+      return {completed:true,result:action.result};
     }
-
-    throw new Error('Unknown agent action: ' + action.type);
+    throw new Error('Unknown agent action: '+action.type);
   }
 
-  async callTool(name, input) {
-    this._emit('agent.tool_called', { name, input });
-    if (this.toolRouter) {
-      return this.toolRouter.execute(name, input, this.context());
-    }
-    const tool = this.tools[name];
-    if (typeof tool !== 'function') throw new Error('Tool not allowed: ' + name);
-    const result = await tool(input);
-    this._emit('tool.completed', { name, result });
+  async callTool(name,input) {
+    this._emit('agent.tool_called',{name,input});
+    if (this.toolRouter) return this.toolRouter.execute(name,input,this.context());
+    const tool=this.tools[name];
+    if (typeof tool!=='function') throw new Error('Tool not allowed: '+name);
+    const result=await tool(input);
+    this._emit('tool.completed',{name,result});
     return result;
   }
 
-  _emit(type, data = {}) {
-    if (this.eventBus) {
-      this.eventBus.emit(type, {
-        specialistId: this.specialist.id,
-        taskId: this.task.id,
-        ...data
-      });
-    }
+  _emit(type,data={}){
+    if(this.eventBus) this.eventBus.emit(type,{specialistId:this.specialist.id,taskId:this.task.id,...data});
   }
 }
-
-module.exports = { AgentRuntime };
+module.exports={AgentRuntime};
