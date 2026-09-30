@@ -7,6 +7,7 @@ class Orchestrator{
     this.maxSteps=options.maxSteps||30;
     this.steps=0;
     this.eventBus=options.eventBus||null;
+    this.stateStore=options.stateStore||null;
     this.tasks=new Map();
     this.specialists=options.specialists||[];
     this.tools=options.tools||{};
@@ -18,6 +19,19 @@ class Orchestrator{
     this.lessonEngine=options.lessonEngine||null;
     this.companyMemory=options.companyMemory||null;
     this.projectMemory=options.projectMemory||null;
+    this._loadState();
+  }
+
+  _loadState(){
+    if(!this.stateStore || typeof this.stateStore.load!=='function') return;
+    const state=this.stateStore.load()||{};
+    for(const task of Object.values(state.tasks||{})) this.tasks.set(task.id,task);
+  }
+
+  _persistState(){
+    if(!this.stateStore || typeof this.stateStore.update!=='function') return;
+    const tasks=Object.fromEntries(this.tasks);
+    this.stateStore.update({tasks,specialists:this.specialists});
   }
 
   canContinue(){return this.steps<this.maxSteps;}
@@ -168,6 +182,7 @@ class Orchestrator{
     return task;
   }
   _emit(type,task){
+    this._persistState();
     if(this.eventBus) this.eventBus.emit(type,{taskId:task.id,status:task.status,task});
   }
 }
