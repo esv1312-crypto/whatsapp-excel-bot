@@ -11,6 +11,7 @@ class WorkerEngine {
     this.experienceStore=options.experienceStore||this.orchestrator.experienceStore||null;
     this.lessonEngine=options.lessonEngine||this.orchestrator.lessonEngine||null;
     this.resumeOnStart=options.resumeOnStart!==false;
+    this.watchdog=options.watchdog||null;
     this._recoverActiveWork();
   }
 
@@ -35,6 +36,12 @@ class WorkerEngine {
     if(!this.canContinue()) return {progressed:false,reason:'LIMIT_REACHED'};
     this.ticks++;
     this.orchestrator.refresh();
+    if(this.watchdog){
+      for(const agent of this.orchestrator.heartbeat.list()) {
+        const inspection=this.watchdog.inspect(agent);
+        if(inspection.status==='STALLED') await this.watchdog.recover(agent);
+      }
+    }
     const pendingVerification=this.orchestrator.listTasks().find(item=>item.status==='VERIFYING');
     if(pendingVerification){
       const verification=await this._verifyTask(pendingVerification);
@@ -94,7 +101,7 @@ class WorkerEngine {
       const evaluation=verification.evaluation||{};
       const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[],reason:evaluation.missing||evaluation.missingChecks||[],verification:evaluation};
       this.orchestrator.addTask(fix);
-      if(this.experienceStore && typeof this.experienceStore.findSimilar==='function') fix.priorExperience=this.experienceStore.findSimilar({objective:fix.objective,requiredSkills:fix.requiredSkills}).slice(0,5);
+      if(this.experienceStore && typeof this.experienceStore.findSimilar==='function') fix.priorExperience=this.experienceStore.findSimilar({project:task.project,objective:fix.objective,requiredSkills:fix.requiredSkills}).slice(0,5);
       return fix;
     }
     return null;
