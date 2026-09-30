@@ -1,6 +1,8 @@
 const {TASK_STATUS,markReadyIfPossible,transitionTask}=require('./task_engine');
 const {AgentRuntime}=require('./agent_runtime');
 const {ToolRouter}=require('./tool_router');
+const {HeartbeatManager}=require('./heartbeat');
+const {FailureClassifier}=require('./failure_classifier');
 
 class Orchestrator{
   constructor(options={}){
@@ -15,6 +17,8 @@ class Orchestrator{
     this.agentFactory=options.agentFactory||((opts)=>new AgentRuntime(opts));
     this.verificationController=options.verificationController||null;
     this.activeAgents=new Map();
+    this.heartbeat=options.heartbeat||new HeartbeatManager({eventBus:this.eventBus});
+    this.failureClassifier=options.failureClassifier||new FailureClassifier();
     this.experienceStore=options.experienceStore||null;
     this.lessonEngine=options.lessonEngine||null;
     this.companyMemory=options.companyMemory||null;
@@ -75,7 +79,7 @@ class Orchestrator{
     transitionTask(task,TASK_STATUS.IN_PROGRESS);
     const specialist=this._findSpecialistById(task.assignee);
     const memory=this._findExperience(task);
-    const agent=this.agentFactory({specialist,task,tools:this.tools,toolRouter:this.toolRouter,eventBus:this.eventBus,maxSteps:10,memory});
+    const agent=this.agentFactory({specialist,task,tools:this.tools,toolRouter:this.toolRouter,eventBus:this.eventBus,maxSteps:10,memory,heartbeat:this.heartbeat,executionId:`${specialist.id}:${task.id}`});
     if(memory.length) task.priorExperience=memory;
     this.activeAgents.set(task.id,agent);
     agent.start();
@@ -113,6 +117,7 @@ class Orchestrator{
     const task=this._requireTask(taskId);
     const result=await this.verificationController.verifyTask(task);
     task.verification=result.verification;
+    if(!result.evaluation.passed) task.failure=this.failureClassifier.classify({reason:result.evaluation.missing||result.evaluation.missingChecks,source:result.evaluation.source,failureClass:result.evaluation.failureClass});
     this._learn(task,result);
     if(result.evaluation.passed){
       transitionTask(task,TASK_STATUS.COMPLETED); this._emit('task.completed',task); this.activeAgents.delete(taskId); this.refresh();
@@ -123,6 +128,7 @@ class Orchestrator{
   verify(taskId,passed,details=null){
     const task=this._requireTask(taskId);
     task.verification={passed,details,evidence:details?.evidence||null};
+    if(!passed) task.failure=this.failureClassifier.classify({reason:details?.reason||details?.missing,source:details?.source,failureClass:details?.failureClass});
     this._learn(task,{verification:task.verification});
     transitionTask(task,passed?TASK_STATUS.COMPLETED:TASK_STATUS.FAIL);
     this._emit(passed?'task.completed':'task.failed',task);
