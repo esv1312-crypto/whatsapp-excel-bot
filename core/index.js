@@ -5,5 +5,18 @@ const {createProject}=require('./project_engine');
 const {verify}=require('./verification');
 const {EventBus}=require('./events');
 const {Orchestrator}=require('./orchestrator');
-const {plan}=require('./chief_of_staff');
-module.exports={...task,...registry,buildTeam,createProject,verify,EventBus,Orchestrator,plan};
+const {AgentRuntime}=require('./agent_runtime');
+const {plan,planAndAssign}=require('./chief_of_staff');
+
+module.exports={
+  ...task,
+  ...registry,
+  buildTeam,
+  createProject,
+  verify,
+  EventBus,
+  Orchestrator,
+  AgentRuntime,
+  plan,
+  planAndAssign
+};
