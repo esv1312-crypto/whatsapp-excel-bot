@@ -55,7 +55,7 @@ learningOrchestrator.addTask(learningTask);
 learningOrchestrator.refresh();
 learningOrchestrator.assign(learningTask.id);
 learningOrchestrator.start(learningTask.id);
-await learningOrchestrator.runAgent(learningTask.id,[{type:'complete',result:{ok:true}}]);
+await learningOrchestrator.runAgent(learningTask.id,[{type:'complete',result:{ok:true,lesson:'Validated repair flow after successful verification'}}]);
 learningOrchestrator.verify(learningTask.id,true,{passed:true,evidence:{tests:'smoke',commit:'learning'}});
 if(learningStore2.list().length!==1) throw new Error('Learning cycle did not record experience');
 if(learningCompany2.list().length!==1) throw new Error('Verified lesson did not reach company memory');
