@@ -142,7 +142,7 @@ class Orchestrator{
     const experience=this.experienceStore.record({
       taskId:task.id, project:task.project, specialist:task.assignee,
       action:task.objective, result:task.result || result.verification || result,
-      verification:result.verification || task.verification,
+      verification:{...(task.verification || {}),...(result.verification || {})},
       evidence:result.verification?.evidence || task.verification?.evidence || null,
       failure:result.evaluation?.missing || null,
       solution:task.result || null
