@@ -8,6 +8,8 @@ class WorkerEngine {
     this.verifier=options.verifier||null;
     this.maxFixesPerTask=options.maxFixesPerTask||3;
     this.fixCounts=new Map();
+    this.experienceStore=options.experienceStore||orchestrator.experienceStore||null;
+    this.lessonEngine=options.lessonEngine||orchestrator.lessonEngine||null;
   }
 
   canContinue(){return this.ticks<this.maxTicks&&this.orchestrator.canContinue();}
@@ -64,6 +66,7 @@ class WorkerEngine {
       const evaluation=verification.evaluation||{};
       const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[],reason:evaluation.missing||evaluation.missingChecks||[],verification:evaluation};
       this.orchestrator.addTask(fix);
+      if(this.experienceStore && typeof this.experienceStore.findSimilar==='function') fix.priorExperience=this.experienceStore.findSimilar({objective:fix.objective,requiredSkills:fix.requiredSkills}).slice(0,5);
       return fix;
     }
     return null;
