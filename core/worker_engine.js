@@ -10,6 +10,23 @@ class WorkerEngine {
     this.fixCounts=new Map();
     this.experienceStore=options.experienceStore||this.orchestrator.experienceStore||null;
     this.lessonEngine=options.lessonEngine||this.orchestrator.lessonEngine||null;
+    this.resumeOnStart=options.resumeOnStart!==false;
+    this._recoverActiveWork();
+  }
+
+  _recoverActiveWork(){
+    if(!this.resumeOnStart) return;
+    const tasks=this.orchestrator.listTasks();
+    for(const task of tasks){
+      if(task.status==='VERIFYING') continue;
+      if(task.status==='IN_PROGRESS' && task.assignee) task.status='READY';
+      if(task.status==='ASSIGNED' && task.assignee) task.status='READY';
+      if(task.status==='FIXING' && task.parentTask){
+        const fixExists=tasks.some(item=>item.parentTask===task.id && item.status!=='COMPLETED');
+        if(!fixExists) task.status='RETEST';
+      }
+    }
+    this.orchestrator.refresh();
   }
 
   canContinue(){return this.ticks<this.maxTicks&&this.orchestrator.canContinue();}
