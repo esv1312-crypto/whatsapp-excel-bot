@@ -1,10 +1,9 @@
 const office=require('../core');
 
+(async()=>{
 const events=[];
 const bus=new office.EventBus();
-for(const type of ['task.ready','task.completed','agent.started','agent.tool_called','agent.completed','task.verifying']){
-  bus.on(type,event=>events.push(event.type));
-}
+for(const type of ['task.ready','task.completed','agent.started','agent.tool_called','agent.completed','task.verifying']) bus.on(type,event=>events.push(event.type));
 
 const specialists=[
   {id:'product',skills:['product_management']},
@@ -13,21 +12,9 @@ const specialists=[
   {id:'qa',skills:['testing']}
 ];
 
-const orchestrator=new office.Orchestrator({
-  eventBus:bus,
-  specialists,
-  tools:{echo:input=>({echo:input})},
-  maxSteps:20
-});
-
+const orchestrator=new office.Orchestrator({eventBus:bus,specialists,tools:{echo:input=>({echo:input})},maxSteps:20});
 const foundation=office.createTask({id:'foundation',objective:'Foundation task',requiredSkills:['software_development']});
-const dependent=office.createTask({
-  id:'dependent',
-  objective:'Dependent task',
-  dependencies:['foundation'],
-  requiredSkills:['testing']
-});
-
+const dependent=office.createTask({id:'dependent',objective:'Dependent task',dependencies:['foundation'],requiredSkills:['testing']});
 orchestrator.addTasks([dependent,foundation]);
 
 const worker=new office.WorkerEngine({
@@ -40,28 +27,20 @@ const worker=new office.WorkerEngine({
   verifier:task=>({passed:true,details:{verifiedBy:'smoke'}})
 });
 
-const result=worker.run();
-
+const result=await worker.run();
 const routed=orchestrator.toolRouter.canUse('echo',{allowedTools:['echo']});
-if(!routed.allowed)throw new Error('ToolRouter did not allow permitted tool');
+if(!routed.allowed) throw new Error('ToolRouter did not allow permitted tool');
 const denied=orchestrator.toolRouter.canUse('echo',{allowedTools:['other']});
-if(denied.allowed)throw new Error('ToolRouter allowed forbidden tool');
+if(denied.allowed) throw new Error('ToolRouter allowed forbidden tool');
+if(!result.complete) throw new Error('Worker did not complete the project');
+if(result.ticks!==3) throw new Error('Worker should use two execution ticks plus one completion check');
+if(orchestrator.getTask('foundation').status!=='COMPLETED') throw new Error('Foundation not completed');
+if(orchestrator.getTask('dependent').status!=='COMPLETED') throw new Error('Dependent not completed');
+for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed']) if(!events.includes(type)) throw new Error('Missing event: '+type);
 
-if(!result.complete)throw new Error('Worker did not complete the project');
-if(result.ticks!==3)throw new Error('Worker should use two execution ticks plus one completion check');
-if(orchestrator.getTask('foundation').status!=='COMPLETED')throw new Error('Foundation not completed');
-if(orchestrator.getTask('dependent').status!=='COMPLETED')throw new Error('Dependent not completed');
-
-for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed']){
-  if(!events.includes(type))throw new Error('Missing event: '+type);
-}
-
-const plan=office.planAndAssign('Build the AI-OFFICE simulator',{
-  project:'office-simulator',
-  specialists
-});
-if(plan.tasks.length!==4)throw new Error('Chief did not create the expected plan');
-if(!plan.team.complete)throw new Error('Chief could not assemble the required team');
-if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product')throw new Error('Initial ready task is incorrect');
-
+const plan=office.planAndAssign('Build the AI-OFFICE simulator',{project:'office-simulator',specialists});
+if(plan.tasks.length!==4) throw new Error('Chief did not create the expected plan');
+if(!plan.team.complete) throw new Error('Chief could not assemble the required team');
+if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product') throw new Error('Initial ready task is incorrect');
 console.log('AI-OFFICE smoke test: PASS');
+})().catch(error=>{console.error(error);process.exitCode=1;});
