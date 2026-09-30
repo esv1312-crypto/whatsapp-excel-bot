@@ -23,6 +23,10 @@ const {VerificationPolicy}=require('./verification_policy');
 const {GitHubCommitTool}=require('./tools/github_commit');
 const {GitHubCommitRuntimeAdapter}=require('./tools/github_commit_runtime_adapter');
 const {CIController}=require('./ci_controller');
+const {ExperienceStore}=require('./memory/experience_store');
+const {LessonEngine}=require('./memory/lesson_engine');
+const {CompanyMemory}=require('./memory/company_memory');
+const {ProjectMemory}=require('./memory/project_memory');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -52,6 +56,10 @@ module.exports={
   GitHubCommitTool,
   GitHubCommitRuntimeAdapter,
   CIController,
+  ExperienceStore,
+  LessonEngine,
+  CompanyMemory,
+  ProjectMemory,
   plan,
   planAndAssign
 };
