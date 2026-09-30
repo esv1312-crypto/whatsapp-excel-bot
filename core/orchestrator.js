@@ -1,4 +1,5 @@
 const {TASK_STATUS,markReadyIfPossible,transitionTask}=require('./task_engine');
+const {AgentRuntime}=require('./agent_runtime');
 
 class Orchestrator{
   constructor(options={}){
@@ -6,12 +7,13 @@ class Orchestrator{
     this.steps=0;
     this.eventBus=options.eventBus||null;
     this.tasks=new Map();
+    this.specialists=options.specialists||[];
+    this.tools=options.tools||{};
+    this.agentFactory=options.agentFactory||((opts)=>new AgentRuntime(opts));
+    this.activeAgents=new Map();
   }
 
-  canContinue(){
-    return this.steps<this.maxSteps;
-  }
-
+  canContinue(){return this.steps<this.maxSteps;}
   step(){
     if(!this.canContinue()) throw new Error('Execution step limit reached');
     return ++this.steps;
@@ -24,18 +26,9 @@ class Orchestrator{
     return task;
   }
 
-  addTasks(tasks=[]){
-    tasks.forEach(task=>this.addTask(task));
-    return tasks;
-  }
-
-  getTask(id){
-    return this.tasks.get(id)||null;
-  }
-
-  listTasks(){
-    return [...this.tasks.values()];
-  }
+  addTasks(tasks=[]){tasks.forEach(task=>this.addTask(task));return tasks;}
+  getTask(id){return this.tasks.get(id)||null;}
+  listTasks(){return [...this.tasks.values()];}
 
   refresh(){
     for(const task of this.tasks.values()){
@@ -46,8 +39,12 @@ class Orchestrator{
     return this.listTasks();
   }
 
-  assign(taskId){
+  assign(taskId,specialist){
     const task=this._requireTask(taskId);
+    if(task.status!==TASK_STATUS.READY) throw new Error('Task is not READY');
+    const selected=specialist||this._findSpecialist(task.requiredSkills);
+    if(!selected) throw new Error('No specialist matches required skills');
+    task.assignee=selected.id;
     transitionTask(task,TASK_STATUS.ASSIGNED);
     this._emit('task.assigned',task);
     return task;
@@ -55,8 +52,35 @@ class Orchestrator{
 
   start(taskId){
     const task=this._requireTask(taskId);
+    if(!task.assignee) throw new Error('Task must be assigned before start');
     transitionTask(task,TASK_STATUS.IN_PROGRESS);
+    const specialist=this._findSpecialistById(task.assignee);
+    const agent=this.agentFactory({
+      specialist,
+      task,
+      tools:this.tools,
+      eventBus:this.eventBus,
+      maxSteps:10
+    });
+    this.activeAgents.set(task.id,agent);
+    agent.start();
     this._emit('task.started',task);
+    return agent;
+  }
+
+  runAgent(taskId,actions=[]){
+    const agent=this.activeAgents.get(taskId);
+    if(!agent) throw new Error('No active agent for task: '+taskId);
+    const task=this._requireTask(taskId);
+
+    for(const action of actions){
+      this.step();
+      const result=agent.run(action);
+      if(result&&result.completed){
+        this.implement(taskId,result.result);
+        break;
+      }
+    }
     return task;
   }
 
@@ -65,6 +89,8 @@ class Orchestrator{
     task.result=result;
     transitionTask(task,TASK_STATUS.IMPLEMENTED);
     this._emit('task.implemented',task);
+    transitionTask(task,TASK_STATUS.VERIFYING);
+    this._emit('task.verifying',task);
     return task;
   }
 
@@ -73,6 +99,7 @@ class Orchestrator{
     task.verification={passed,details};
     transitionTask(task,passed?TASK_STATUS.COMPLETED:TASK_STATUS.FAIL);
     this._emit(passed?'task.completed':'task.failed',task);
+    this.activeAgents.delete(taskId);
     if(passed) this.refresh();
     return task;
   }
@@ -88,12 +115,23 @@ class Orchestrator{
     const task=this._requireTask(taskId);
     transitionTask(task,TASK_STATUS.RETEST);
     this._emit('task.retest',task);
+    transitionTask(task,TASK_STATUS.VERIFYING);
     return task;
+  }
+
+  _findSpecialist(skills=[]){
+    return this.specialists.find(s=>skills.every(skill=>(s.skills||[]).includes(skill)))||null;
+  }
+
+  _findSpecialistById(id){
+    const specialist=this.specialists.find(s=>s.id===id);
+    if(!specialist) throw new Error('Specialist not found: '+id);
+    return specialist;
   }
 
   _requireTask(taskId){
     const task=this.getTask(taskId);
-    if(!task) throw new Error(`Task not found: ${taskId}`);
+    if(!task) throw new Error('Task not found: '+taskId);
     return task;
   }
 
