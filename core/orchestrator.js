@@ -1,5 +1,6 @@
 const {TASK_STATUS,markReadyIfPossible,transitionTask}=require('./task_engine');
 const {AgentRuntime}=require('./agent_runtime');
+const {ToolRouter}=require('./tool_router');
 
 class Orchestrator{
   constructor(options={}){
@@ -9,6 +10,7 @@ class Orchestrator{
     this.tasks=new Map();
     this.specialists=options.specialists||[];
     this.tools=options.tools||{};
+    this.toolRouter=options.toolRouter||new ToolRouter({tools:Object.entries(this.tools).map(([name,execute])=>({name,execute})),eventBus:this.eventBus});
     this.agentFactory=options.agentFactory||((opts)=>new AgentRuntime(opts));
     this.activeAgents=new Map();
   }
@@ -59,6 +61,7 @@ class Orchestrator{
       specialist,
       task,
       tools:this.tools,
+      toolRouter:this.toolRouter,
       eventBus:this.eventBus,
       maxSteps:10
     });
