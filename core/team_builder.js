@@ -1,0 +1,2 @@
+function buildTeam(requiredSkills=[],specialists=[]){const remaining=new Set(requiredSkills);const team=[];for(const s of specialists){const useful=s.skills.filter(x=>remaining.has(x));if(useful.length){team.push({specialistId:s.id,skills:useful});useful.forEach(x=>remaining.delete(x));}if(!remaining.size)break;}return{team,missingSkills:[...remaining],complete:remaining.size===0};}
+module.exports={buildTeam};
