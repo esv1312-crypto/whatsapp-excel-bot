@@ -43,7 +43,7 @@ const worker=new office.WorkerEngine({
 const result=worker.run();
 
 if(!result.complete)throw new Error('Worker did not complete the project');
-if(result.ticks!==2)throw new Error('Worker should execute two dependent tasks');
+if(result.ticks!==3)throw new Error('Worker should use two execution ticks plus one completion check');
 if(orchestrator.getTask('foundation').status!=='COMPLETED')throw new Error('Foundation not completed');
 if(orchestrator.getTask('dependent').status!=='COMPLETED')throw new Error('Dependent not completed');
 
