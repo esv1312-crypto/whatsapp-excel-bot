@@ -134,7 +134,7 @@ class Orchestrator{
 
   _findExperience(task){
     if(!this.experienceStore || typeof this.experienceStore.findSimilar!=='function') return [];
-    return this.experienceStore.findSimilar({objective:task.objective,requiredSkills:task.requiredSkills}).slice(0,5);
+    return this.experienceStore.findSimilar({project:task.project,objective:task.objective,requiredSkills:task.requiredSkills}).slice(0,5);
   }
 
   _learn(task,result){
