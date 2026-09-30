@@ -1,6 +1,12 @@
 const office=require('../core');
 
 (async()=>{
+const learningStore=new office.ExperienceStore();
+const learningExperience=learningStore.record({taskId:'learning-task',project:'office-simulator',action:'repair CI',result:'CI passed',verification:{passed:true},evidence:{tests:'success'},failure:'test failure',solution:'repair source',lesson:'Run validation before release'});
+const lesson=new office.LessonEngine().extract(learningExperience);
+if(!lesson || !lesson.verified) throw new Error('Learning lesson was not verified');
+if(new office.ProjectMemory().search('office-simulator','repair').length!==0) throw new Error('Project memory should not contain unadded lessons');
+
 const events=[];
 const bus=new office.EventBus();
 for(const type of ['task.ready','task.completed','agent.started','agent.tool_called','agent.completed','task.verifying','tool.requested','tool.completed']) bus.on(type,event=>events.push(event.type));
