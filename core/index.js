@@ -32,6 +32,7 @@ const {StateStore}=require('./state_store');
 const {EventStore}=require('./event_store');
 const {OfficeScheduler}=require('./scheduler');
 const {ProjectRunner}=require('./project_runner');
+const {RecoveryManager}=require('./recovery_manager');
 const {HeartbeatManager}=require('./heartbeat');
 const {Watchdog}=require('./watchdog');
 const {FailureClassifier,FAILURE_CLASS}=require('./failure_classifier');
@@ -74,6 +75,7 @@ module.exports={
   EventStore,
   OfficeScheduler,
   ProjectRunner,
+  RecoveryManager,
   HeartbeatManager,
   Watchdog,
   FailureClassifier,
