@@ -30,6 +30,7 @@ const {CompanyMemory}=require('./memory/company_memory');
 const {ProjectMemory}=require('./memory/project_memory');
 const {StateStore}=require('./state_store');
 const {EventStore}=require('./event_store');
+const {OfficeScheduler}=require('./scheduler');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -66,6 +67,7 @@ module.exports={
   ProjectMemory,
   StateStore,
   EventStore,
+  OfficeScheduler,
   plan,
   planAndAssign
 };
