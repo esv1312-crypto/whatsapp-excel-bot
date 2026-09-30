@@ -113,6 +113,8 @@ class Orchestrator{
     const task=this._requireTask(taskId);
     transitionTask(task,TASK_STATUS.FIXING);
     this._emit('task.fixing',task);
+    transitionTask(task,TASK_STATUS.READY);
+    this._emit('task.ready',task);
     return task;
   }
 
