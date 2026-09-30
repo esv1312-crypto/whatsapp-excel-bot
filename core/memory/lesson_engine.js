@@ -17,7 +17,7 @@ class LessonEngine {
       project: experience.project || null,
       lesson: experience.lesson || (experience.failure && experience.solution
         ? `Failure: ${experience.failure}. Solution: ${experience.solution}.`
-        : null),
+        : experience.solution ? `Successful approach: ${experience.solution}.` : null),
       sourceExperience: experience.id || null,
       verified: passed,
       createdAt: new Date().toISOString()
