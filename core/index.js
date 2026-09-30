@@ -8,6 +8,7 @@ const {Orchestrator}=require('./orchestrator');
 const {AgentRuntime}=require('./agent_runtime');
 const {WorkerEngine}=require('./worker_engine');
 const {ToolRouter}=require('./tool_router');
+const {ToolPolicy}=require('./tool_policy');
 const {GitHubReader}=require('./tools/github_reader');
 const {GitHubWriter}=require('./tools/github_writer');
 const {GitHubGateway}=require('./tools/github_gateway');
@@ -40,6 +41,7 @@ module.exports={
   AgentRuntime,
   WorkerEngine,
   ToolRouter,
+  ToolPolicy,
   GitHubReader,
   GitHubWriter,
   GitHubGateway,
