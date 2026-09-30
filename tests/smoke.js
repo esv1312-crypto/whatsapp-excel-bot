@@ -2,6 +2,7 @@ const office=require('../core');
 const {run:runWorkerFixRetest}=require('./worker_fix_retest');
 require('./tool_router_guardrails');
 require('./state_store');
+require('./event_store');
 
 (async()=>{
 const learningStore=new office.ExperienceStore();
