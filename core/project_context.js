@@ -74,7 +74,8 @@ class ProjectContextBuilder {
   }
 
   _detectCapabilities(files) {
-    const text = Object.values(files).join('\n');
+    const text = Object.values(files).join('
+');
     const capabilities = [];
     if (/com\.android\.application|compileSdk|assembleDebug/.test(text)) capabilities.push('android');
     if (/WebView|setJavaScriptEnabled|loadUrl\("file:/.test(text)) capabilities.push('android_webview');
