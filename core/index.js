@@ -28,6 +28,7 @@ const {ExperienceStore}=require('./memory/experience_store');
 const {LessonEngine}=require('./memory/lesson_engine');
 const {CompanyMemory}=require('./memory/company_memory');
 const {ProjectMemory}=require('./memory/project_memory');
+const {StateStore}=require('./state_store');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -62,6 +63,7 @@ module.exports={
   LessonEngine,
   CompanyMemory,
   ProjectMemory,
+  StateStore,
   plan,
   planAndAssign
 };
