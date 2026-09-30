@@ -42,6 +42,28 @@ const recovered=new office.Orchestrator({
 });
 assert(recovered.getTask('persistent-task'));
 assert.strictEqual(recovered.getTask('persistent-task').project,'persistent-project');
+const interruptedStore=new office.StateStore({filePath:file});
+const interrupted=new office.Orchestrator({
+  stateStore:interruptedStore,
+  specialists:[{id:'dev',skills:['software_development']}]
+});
+const interruptedTask=office.createTask({
+  id:'interrupted-task',
+  project:'persistent-project',
+  objective:'Recover interrupted work',
+  requiredSkills:['software_development']
+});
+interrupted.addTask(interruptedTask);
+interrupted.refresh();
+interrupted.assign(interruptedTask.id);
+interrupted.start(interruptedTask.id);
+const worker=new office.WorkerEngine({
+  orchestrator:interrupted,
+  actionProvider:async task=>[{type:'complete',result:{ok:true}}],
+  verifier:async task=>({passed:true})
+});
+assert.strictEqual(interrupted.getTask('interrupted-task').status,'READY');
+
 fs.unlinkSync(file);
   console.log('state store tests: OK');
 })();
