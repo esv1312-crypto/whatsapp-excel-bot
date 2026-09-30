@@ -4,6 +4,9 @@ const events=[];
 const bus=new office.EventBus();
 bus.on('task.ready',event=>events.push(event.type));
 bus.on('task.completed',event=>events.push(event.type));
+bus.on('agent.started',event=>events.push(event.type));
+bus.on('agent.tool_called',event=>events.push(event.type));
+bus.on('agent.completed',event=>events.push(event.type));
 
 const orchestrator=new office.Orchestrator({eventBus:bus,maxSteps:10});
 
@@ -48,5 +51,24 @@ const plan=office.planAndAssign('Build the AI-OFFICE simulator',{
 if(plan.tasks.length!==4)throw new Error('Chief did not create the expected plan');
 if(!plan.team.complete)throw new Error('Chief could not assemble the required team');
 if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product')throw new Error('Initial ready task is incorrect');
+
+const runtime=new office.AgentRuntime({
+  specialist:specialists[2],
+  task:foundation,
+  eventBus:bus,
+  tools:{echo:input=>({echo:input})},
+  maxSteps:3
+});
+
+runtime.start();
+const toolResult=runtime.run({type:'tool',name:'echo',input:'hello'});
+if(toolResult.echo!=='hello')throw new Error('Agent tool execution failed');
+
+const completed=runtime.run({type:'complete',result:{ok:true}});
+if(!completed.completed||runtime.state!=='COMPLETED')throw new Error('Agent completion failed');
+
+if(!events.includes('agent.started')||!events.includes('agent.tool_called')||!events.includes('agent.completed')){
+  throw new Error('Agent runtime events missing');
+}
 
 console.log('AI-OFFICE smoke test: PASS');
