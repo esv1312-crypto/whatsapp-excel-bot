@@ -13,6 +13,7 @@ const {GitHubWriter}=require('./tools/github_writer');
 const {GitHubGateway}=require('./tools/github_gateway');
 const {GitHubRuntimeAdapter}=require('./tools/github_runtime_adapter');
 const {ProjectDiscovery}=require('./project_discovery');
+const {ProjectContextBuilder}=require('./project_context');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -31,6 +32,7 @@ module.exports={
   GitHubGateway,
   GitHubRuntimeAdapter,
   ProjectDiscovery,
+  ProjectContextBuilder,
   plan,
   planAndAssign
 };
