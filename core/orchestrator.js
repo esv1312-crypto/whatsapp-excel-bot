@@ -14,6 +14,10 @@ class Orchestrator{
     this.agentFactory=options.agentFactory||((opts)=>new AgentRuntime(opts));
     this.verificationController=options.verificationController||null;
     this.activeAgents=new Map();
+    this.experienceStore=options.experienceStore||null;
+    this.lessonEngine=options.lessonEngine||null;
+    this.companyMemory=options.companyMemory||null;
+    this.projectMemory=options.projectMemory||null;
   }
 
   canContinue(){return this.steps<this.maxSteps;}
@@ -56,7 +60,9 @@ class Orchestrator{
     if(!task.assignee) throw new Error('Task must be assigned before start');
     transitionTask(task,TASK_STATUS.IN_PROGRESS);
     const specialist=this._findSpecialistById(task.assignee);
-    const agent=this.agentFactory({specialist,task,tools:this.tools,toolRouter:this.toolRouter,eventBus:this.eventBus,maxSteps:10});
+    const memory=this._findExperience(task);
+    const agent=this.agentFactory({specialist,task,tools:this.tools,toolRouter:this.toolRouter,eventBus:this.eventBus,maxSteps:10,memory});
+    if(memory.length) task.priorExperience=memory;
     this.activeAgents.set(task.id,agent);
     agent.start();
     this._emit('task.started',task);
@@ -93,6 +99,7 @@ class Orchestrator{
     const task=this._requireTask(taskId);
     const result=await this.verificationController.verifyTask(task);
     task.verification=result.verification;
+    this._learn(task,result);
     if(result.evaluation.passed){
       transitionTask(task,TASK_STATUS.COMPLETED); this._emit('task.completed',task); this.activeAgents.delete(taskId); this.refresh();
     } else { transitionTask(task,TASK_STATUS.FAIL); this._emit('task.failed',task); this.activeAgents.delete(taskId); }
@@ -102,6 +109,7 @@ class Orchestrator{
   verify(taskId,passed,details=null){
     const task=this._requireTask(taskId);
     task.verification={passed,details};
+    this._learn(task,{verification:task.verification});
     transitionTask(task,passed?TASK_STATUS.COMPLETED:TASK_STATUS.FAIL);
     this._emit(passed?'task.completed':'task.failed',task);
     this.activeAgents.delete(taskId);
@@ -122,6 +130,29 @@ class Orchestrator{
     this._emit('task.retest',task);
     transitionTask(task,TASK_STATUS.VERIFYING);
     return task;
+  }
+
+  _findExperience(task){
+    if(!this.experienceStore || typeof this.experienceStore.findSimilar!=='function') return [];
+    return this.experienceStore.findSimilar({objective:task.objective,requiredSkills:task.requiredSkills}).slice(0,5);
+  }
+
+  _learn(task,result){
+    if(!this.experienceStore || !this.lessonEngine) return null;
+    const experience=this.experienceStore.record({
+      taskId:task.id, project:task.project, specialist:task.assignee,
+      action:task.objective, result:task.result || result.verification || result,
+      verification:result.verification || task.verification,
+      evidence:result.verification?.evidence || task.verification?.evidence || null,
+      failure:result.evaluation?.missing || null,
+      solution:task.result || null
+    });
+    const lesson=this.lessonEngine.extract(experience);
+    if(!lesson || lesson.verified!==true) return lesson;
+    if(this.companyMemory) this.companyMemory.addLesson(lesson);
+    if(this.projectMemory && task.project) this.projectMemory.addLesson(task.project,lesson);
+    this._emit('lesson.created',task);
+    return lesson;
   }
 
   _findSpecialist(skills=[]){return this.specialists.find(s=>skills.every(skill=>(s.skills||[]).includes(skill)))||null;}
