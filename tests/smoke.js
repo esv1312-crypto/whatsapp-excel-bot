@@ -42,6 +42,11 @@ const worker=new office.WorkerEngine({
 
 const result=worker.run();
 
+const routed=orchestrator.toolRouter.canUse('echo',{allowedTools:['echo']});
+if(!routed.allowed)throw new Error('ToolRouter did not allow permitted tool');
+const denied=orchestrator.toolRouter.canUse('echo',{allowedTools:['other']});
+if(denied.allowed)throw new Error('ToolRouter allowed forbidden tool');
+
 if(!result.complete)throw new Error('Worker did not complete the project');
 if(result.ticks!==3)throw new Error('Worker should use two execution ticks plus one completion check');
 if(orchestrator.getTask('foundation').status!=='COMPLETED')throw new Error('Foundation not completed');
