@@ -7,7 +7,6 @@ class LessonEngine {
     if (!experience.taskId) throw new Error('taskId is required');
     const verification = experience.verification || {};
     const passed = verification.passed === true || verification.evaluation?.passed === true;
-    if (!passed) return null;
     if (this.minEvidence && !this.hasEvidence(experience.evidence, verification)) return null;
     if (!experience.failure && !experience.solution && !experience.lesson) return null;
 
