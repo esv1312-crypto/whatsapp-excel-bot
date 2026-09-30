@@ -9,6 +9,9 @@ require('./scheduler');
 require('./project_bootstrap');
 require('./project_runner');
 require('./execution_observability');
+require('./ci_controller');
+require('./github_evidence');
+require('./verification_controller');
 
 (async()=>{
 const learningStore=new office.ExperienceStore();
