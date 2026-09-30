@@ -1,6 +1,7 @@
 const office=require('../core');
 const {run:runWorkerFixRetest}=require('./worker_fix_retest');
 const {run:runRecoveryManager}=require('./recovery_manager');
+const {run:runProjectRunnerRestart}=require('./project_runner_restart');
 require('./tool_router_guardrails');
 require('./state_store');
 require('./event_store');
@@ -102,6 +103,7 @@ if(!plan.team.complete) throw new Error('Chief could not assemble the required t
 if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product') throw new Error('Initial ready task is incorrect');
 await runWorkerFixRetest();
 await runRecoveryManager();
+await runProjectRunnerRestart();
 
 const memory=new office.CompanyMemory();
 memory.addLesson(lesson);
