@@ -10,6 +10,9 @@ class AgentRuntime {
     this.maxSteps = options.maxSteps || 10;
     this.steps = 0;
     this.state = 'IDLE';
+    this.heartbeat=options.heartbeat||null;
+    this.executionId=options.executionId||`${this.specialist.id}:${this.task.id}`;
+    this.currentAction=null;
   }
 
   context() {
@@ -23,7 +26,8 @@ class AgentRuntime {
 
   start() {
     this.state = 'RUNNING';
-    this._emit('agent.started');
+    this._emit('agent.started',{executionId:this.executionId});
+    if(this.heartbeat) this.heartbeat.start({executionId:this.executionId,agentId:this.specialist.id,taskId:this.task.id,status:'RUNNING',currentStep:0});
     return this.context();
   }
 
@@ -32,10 +36,13 @@ class AgentRuntime {
     if (this.steps >= this.maxSteps) throw new Error('Agent step limit reached');
     if (!action || typeof action !== 'object') throw new Error('Action is required');
     this.steps++;
+    this.currentAction=action;
+    if(this.heartbeat) this.heartbeat.beat(this.executionId,{status:'RUNNING',currentStep:this.steps,currentAction:action.type+(action.name?`:${action.name}`:'')});
     if (action.type === 'tool') return this.callTool(action.name, action.input);
     if (action.type === 'complete') {
       this.state = 'COMPLETED';
-      this._emit('agent.completed', {result:action.result});
+      this._emit('agent.completed', {result:action.result,executionId:this.executionId});
+      if(this.heartbeat) this.heartbeat.stop(this.executionId,{status:'COMPLETED',result:action.result});
       return {completed:true,result:action.result};
     }
     throw new Error('Unknown agent action: '+action.type);
