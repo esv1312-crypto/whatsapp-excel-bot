@@ -10,6 +10,7 @@ const {WorkerEngine}=require('./worker_engine');
 const {ToolRouter}=require('./tool_router');
 const {GitHubReader}=require('./tools/github_reader');
 const {GitHubWriter}=require('./tools/github_writer');
+const {GitHubGateway}=require('./tools/github_gateway');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -25,6 +26,7 @@ module.exports={
   ToolRouter,
   GitHubReader,
   GitHubWriter,
+  GitHubGateway,
   plan,
   planAndAssign
 };
