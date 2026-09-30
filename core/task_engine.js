@@ -1,25 +1,17 @@
 const TASK_STATUS=Object.freeze({
-  CREATED:'CREATED',
-  READY:'READY',
-  ASSIGNED:'ASSIGNED',
-  IN_PROGRESS:'IN_PROGRESS',
-  WAITING:'WAITING',
-  IMPLEMENTED:'IMPLEMENTED',
-  VERIFYING:'VERIFYING',
-  COMPLETED:'COMPLETED',
-  FAIL:'FAIL',
-  FIXING:'FIXING',
-  RETEST:'RETEST'
+  CREATED:'CREATED', READY:'READY', ASSIGNED:'ASSIGNED', IN_PROGRESS:'IN_PROGRESS',
+  WAITING:'WAITING', IMPLEMENTED:'IMPLEMENTED', VERIFYING:'VERIFYING',
+  COMPLETED:'COMPLETED', FAIL:'FAIL', FIXING:'FIXING', RETEST:'RETEST'
 });
 
 const ALLOWED_TRANSITIONS=Object.freeze({
   CREATED:[TASK_STATUS.READY,TASK_STATUS.WAITING],
   READY:[TASK_STATUS.ASSIGNED,TASK_STATUS.WAITING],
   ASSIGNED:[TASK_STATUS.IN_PROGRESS,TASK_STATUS.WAITING],
-  IN_PROGRESS:[TASK_STATUS.IMPLEMENTED,TASK_STATUS.WAITING, TASK_STATUS.FAIL],
+  IN_PROGRESS:[TASK_STATUS.IMPLEMENTED,TASK_STATUS.WAITING,TASK_STATUS.FAIL],
   WAITING:[TASK_STATUS.READY,TASK_STATUS.ASSIGNED],
   IMPLEMENTED:[TASK_STATUS.VERIFYING],
-  VERIFYING:[TASK_STATUS.COMPLETED,TASK_STATUS.FAIL],
+  VERIFYING:[TASK_STATUS.COMPLETED,TASK_STATUS.FAIL,TASK_STATUS.WAITING],
   FAIL:[TASK_STATUS.FIXING],
   FIXING:[TASK_STATUS.RETEST,TASK_STATUS.FAIL,TASK_STATUS.READY],
   RETEST:[TASK_STATUS.VERIFYING,TASK_STATUS.FAIL],
@@ -29,26 +21,18 @@ const ALLOWED_TRANSITIONS=Object.freeze({
 function createTask(input={}){
   if(!input.objective) throw new Error('Task objective is required');
   return {
-    id:input.id||'task_'+Date.now(),
-    project:input.project||null,
-    requiredSkills:input.requiredSkills||[],
-    status:TASK_STATUS.CREATED,
-    dependencies:input.dependencies||[],
-    objective:input.objective,
-    result:null,
-    verification:null,
+    id:input.id||'task_'+Date.now(), project:input.project||null,
+    requiredSkills:input.requiredSkills||[], status:TASK_STATUS.CREATED,
+    dependencies:input.dependencies||[], objective:input.objective, result:null,
+    verification:null, waitingForVerification:false,
     history:[{status:TASK_STATUS.CREATED,at:new Date().toISOString()}]
   };
 }
 
-function canTransition(current,next){
-  return (ALLOWED_TRANSITIONS[current]||[]).includes(next);
-}
+function canTransition(current,next){ return (ALLOWED_TRANSITIONS[current]||[]).includes(next); }
 
 function transitionTask(task,next){
-  if(!canTransition(task.status,next)){
-    throw new Error(`Invalid task transition: ${task.status} -> ${next}`);
-  }
+  if(!canTransition(task.status,next)) throw new Error(`Invalid task transition: ${task.status} -> ${next}`);
   task.status=next;
   task.history.push({status:next,at:new Date().toISOString()});
   return task;
@@ -59,18 +43,11 @@ function dependenciesReady(task,tasksById){
 }
 
 function markReadyIfPossible(task,tasksById){
+  if(task.waitingForVerification) return false;
   if(task.status!==TASK_STATUS.CREATED && task.status!==TASK_STATUS.WAITING) return false;
   if(!dependenciesReady(task,tasksById)) return false;
   transitionTask(task,TASK_STATUS.READY);
   return true;
 }
 
-module.exports={
-  TASK_STATUS,
-  ALLOWED_TRANSITIONS,
-  createTask,
-  canTransition,
-  transitionTask,
-  dependenciesReady,
-  markReadyIfPossible
-};
+module.exports={TASK_STATUS,ALLOWED_TRANSITIONS,createTask,canTransition,transitionTask,dependenciesReady,markReadyIfPossible};
