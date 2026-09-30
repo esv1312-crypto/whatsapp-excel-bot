@@ -10,12 +10,14 @@ class VerificationController {
   async verifyTask(task = {}) {
     if (!task.id || !task.project || !task.commitSha) throw new Error('task.id, task.project and task.commitSha are required');
     const evidence = await this.evidenceCollector.collect({ repository: task.project, commitSha: task.commitSha });
+    const completedRuns = (evidence.workflowRuns || []).filter(run => run.status === 'completed');
     const verification = {
-      passed: evidence.workflowRuns.length > 0
-        ? evidence.workflowRuns.every(run => run.conclusion === 'success')
+      passed: completedRuns.length > 0
+        ? completedRuns.every(run => run.conclusion === 'success')
         : (evidence.status && evidence.status.statuses.length > 0
           ? evidence.status.statuses.every(status => status.state === 'success')
           : false),
+      pending: (evidence.workflowRuns || []).some(run => run.status !== 'completed'),
       evidence
     };
     const evaluation = this.supervisor.evaluate({
