@@ -12,6 +12,7 @@ class Orchestrator{
     this.tools=options.tools||{};
     this.toolRouter=options.toolRouter||new ToolRouter({tools:Object.entries(this.tools).map(([name,execute])=>({name,execute})),eventBus:this.eventBus});
     this.agentFactory=options.agentFactory||((opts)=>new AgentRuntime(opts));
+    this.verificationController=options.verificationController||null;
     this.activeAgents=new Map();
   }
 
@@ -85,6 +86,17 @@ class Orchestrator{
     transitionTask(task,TASK_STATUS.VERIFYING);
     this._emit('task.verifying',task);
     return task;
+  }
+
+  async verifyWithEvidence(taskId){
+    if(!this.verificationController) throw new Error('VerificationController is not configured');
+    const task=this._requireTask(taskId);
+    const result=await this.verificationController.verifyTask(task);
+    task.verification=result.verification;
+    if(result.evaluation.passed){
+      transitionTask(task,TASK_STATUS.COMPLETED); this._emit('task.completed',task); this.activeAgents.delete(taskId); this.refresh();
+    } else { transitionTask(task,TASK_STATUS.FAIL); this._emit('task.failed',task); this.activeAgents.delete(taskId); }
+    return result;
   }
 
   verify(taskId,passed,details=null){
