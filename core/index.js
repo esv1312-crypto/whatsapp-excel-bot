@@ -32,6 +32,9 @@ const {StateStore}=require('./state_store');
 const {EventStore}=require('./event_store');
 const {OfficeScheduler}=require('./scheduler');
 const {ProjectRunner}=require('./project_runner');
+const {HeartbeatManager}=require('./heartbeat');
+const {Watchdog}=require('./watchdog');
+const {FailureClassifier,FAILURE_CLASS}=require('./failure_classifier');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -71,6 +74,10 @@ module.exports={
   EventStore,
   OfficeScheduler,
   ProjectRunner,
+  HeartbeatManager,
+  Watchdog,
+  FailureClassifier,
+  FAILURE_CLASS,
   plan,
   planAndAssign
 };
