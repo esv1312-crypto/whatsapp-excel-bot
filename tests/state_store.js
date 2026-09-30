@@ -18,5 +18,30 @@ const {StateStore}=require('../core/state_store');
   assert.strictEqual(new StateStore({filePath:file}).load().tasks.t1.status,'COMPLETED');
   second.clear();
   assert.strictEqual(fs.existsSync(file),false);
+
+const office=require('../core');
+const persistedStore=new office.StateStore({filePath:file});
+const bus=new office.EventBus();
+const orch=new office.Orchestrator({
+  stateStore:persistedStore,
+  eventBus:bus,
+  specialists:[{id:'dev',skills:['software_development']}]
+});
+const task=office.createTask({
+  id:'persistent-task',
+  project:'persistent-project',
+  objective:'Persist orchestrator task state',
+  requiredSkills:['software_development']
+});
+orch.addTask(task);
+orch.refresh();
+
+const recovered=new office.Orchestrator({
+  stateStore:new office.StateStore({filePath:file}),
+  specialists:[{id:'dev',skills:['software_development']}]
+});
+assert(recovered.getTask('persistent-task'));
+assert.strictEqual(recovered.getTask('persistent-task').project,'persistent-project');
+fs.unlinkSync(file);
   console.log('state store tests: OK');
 })();
