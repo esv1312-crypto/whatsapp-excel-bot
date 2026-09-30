@@ -1,2 +1,105 @@
-class Orchestrator{constructor(options={}){this.maxSteps=options.maxSteps||30;this.steps=0;}canContinue(){return this.steps<this.maxSteps;}step(){if(!this.canContinue())throw new Error('Execution step limit reached');return ++this.steps;}}
+const {TASK_STATUS,markReadyIfPossible,transitionTask}=require('./task_engine');
+
+class Orchestrator{
+  constructor(options={}){
+    this.maxSteps=options.maxSteps||30;
+    this.steps=0;
+    this.eventBus=options.eventBus||null;
+    this.tasks=new Map();
+  }
+
+  canContinue(){
+    return this.steps<this.maxSteps;
+  }
+
+  step(){
+    if(!this.canContinue()) throw new Error('Execution step limit reached');
+    return ++this.steps;
+  }
+
+  addTask(task){
+    this.tasks.set(task.id,task);
+    this._emit('task.created',task);
+    this.refresh();
+    return task;
+  }
+
+  addTasks(tasks=[]){
+    tasks.forEach(task=>this.addTask(task));
+    return tasks;
+  }
+
+  getTask(id){
+    return this.tasks.get(id)||null;
+  }
+
+  listTasks(){
+    return [...this.tasks.values()];
+  }
+
+  refresh(){
+    for(const task of this.tasks.values()){
+      if(markReadyIfPossible(task,Object.fromEntries(this.tasks))){
+        this._emit('task.ready',task);
+      }
+    }
+    return this.listTasks();
+  }
+
+  assign(taskId){
+    const task=this._requireTask(taskId);
+    transitionTask(task,TASK_STATUS.ASSIGNED);
+    this._emit('task.assigned',task);
+    return task;
+  }
+
+  start(taskId){
+    const task=this._requireTask(taskId);
+    transitionTask(task,TASK_STATUS.IN_PROGRESS);
+    this._emit('task.started',task);
+    return task;
+  }
+
+  implement(taskId,result){
+    const task=this._requireTask(taskId);
+    task.result=result;
+    transitionTask(task,TASK_STATUS.IMPLEMENTED);
+    this._emit('task.implemented',task);
+    return task;
+  }
+
+  verify(taskId,passed,details=null){
+    const task=this._requireTask(taskId);
+    task.verification={passed,details};
+    transitionTask(task,passed?TASK_STATUS.COMPLETED:TASK_STATUS.FAIL);
+    this._emit(passed?'task.completed':'task.failed',task);
+    if(passed) this.refresh();
+    return task;
+  }
+
+  beginFix(taskId){
+    const task=this._requireTask(taskId);
+    transitionTask(task,TASK_STATUS.FIXING);
+    this._emit('task.fixing',task);
+    return task;
+  }
+
+  retest(taskId){
+    const task=this._requireTask(taskId);
+    transitionTask(task,TASK_STATUS.RETEST);
+    this._emit('task.retest',task);
+    return task;
+  }
+
+  _requireTask(taskId){
+    const task=this.getTask(taskId);
+    if(!task) throw new Error(`Task not found: ${taskId}`);
+    return task;
+  }
+
+  _emit(type,task){
+    if(this.eventBus) this.eventBus.emit(type,{taskId:task.id,status:task.status,task});
+  }
+}
+
 module.exports={Orchestrator};
