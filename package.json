@@ -1,1 +1,1 @@
-{"name":"ai-office-core","version":"0.1.0","description":"Universal autonomous AI Office core","main":"core/index.js","scripts":{"test":"node tests/core.test.js"},"type":"commonjs","license":"MIT"}
+{"name":"ai-office-core","version":"0.1.0","description":"Universal autonomous AI Office core","main":"core/index.js","scripts":{"test":"node tests/smoke.js"},"type":"commonjs","license":"MIT"}
