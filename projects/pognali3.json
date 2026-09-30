@@ -1,0 +1,34 @@
+{
+  "id": "pognali3",
+  "name": "Погнали",
+  "repository": "esv1312-crypto/pognali3",
+  "branch": "main",
+  "type": "android",
+  "status": "ACTIVE",
+  "description": "Мобильное приложение для реальной социальной активности.",
+  "sourceRoots": [
+    "app/src",
+    "app/build.gradle",
+    "build.gradle",
+    "settings.gradle"
+  ],
+  "buildArtifacts": [
+    "app/build",
+    "build",
+    "*.apk",
+    "*.zip"
+  ],
+  "ciWorkflows": [
+    ".github/workflows/android.yml",
+    ".github/workflows/android-ui-test.yml"
+  ],
+  "entrypoints": [
+    "app/src/main/java/com/pognali/app/MainActivity.java",
+    "app/src/main/assets/pognali_final.html"
+  ],
+  "discovery": {
+    "defaultBranch": "main",
+    "lastInspectedCommit": "d8eaf80106c365a27013adc0f35695b87b1f866b",
+    "lastInspectedAt": "2026-09-30T00:00:00Z"
+  }
+}
