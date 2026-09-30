@@ -119,9 +119,17 @@ class Orchestrator{
     task.verification=result.verification;
     if(!result.evaluation.passed) task.failure=this.failureClassifier.classify({reason:result.evaluation.missing||result.evaluation.missingChecks,source:result.evaluation.source,failureClass:result.evaluation.failureClass});
     this._learn(task,result);
-    if(result.evaluation.passed){
+    if(result.verification?.pending){
+      task.waitingForVerification=true;
+      transitionTask(task,TASK_STATUS.WAITING);
+      this._emit('task.waiting',task);
+    } else if(result.evaluation.passed){
+      task.waitingForVerification=false;
       transitionTask(task,TASK_STATUS.COMPLETED); this._emit('task.completed',task); this.activeAgents.delete(taskId); this.refresh();
-    } else { transitionTask(task,TASK_STATUS.FAIL); this._emit('task.failed',task); this.activeAgents.delete(taskId); }
+    } else {
+      task.waitingForVerification=false;
+      transitionTask(task,TASK_STATUS.FAIL); this._emit('task.failed',task); this.activeAgents.delete(taskId);
+    }
     return result;
   }
 
