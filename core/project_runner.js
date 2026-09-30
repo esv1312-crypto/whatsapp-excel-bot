@@ -2,6 +2,7 @@ const {createProject,bootstrapProject}=require('./project_engine');
 const {Orchestrator}=require('./orchestrator');
 const {WorkerEngine}=require('./worker_engine');
 const {OfficeScheduler}=require('./scheduler');
+const {Watchdog}=require('./watchdog');
 
 class ProjectRunner {
   constructor(options={}) {
@@ -20,15 +21,14 @@ class ProjectRunner {
     this.actionProvider=options.actionProvider;
     this.maxTicks=options.maxTicks||50;
     this.maxSteps=options.maxSteps||100;
+    this.watchdog=options.watchdog||null;
   }
 
   async run(input={}) {
     if(!input.goal) throw new Error('Project goal is required');
 
-    const boot=bootstrapProject(
-      input.project||{id:input.projectId,name:input.projectName||input.goal,repository:input.repository,branch:input.branch||'main'},
-      {goal:input.goal,blueprint:input.blueprint,specialists:this.specialists}
-    );
+    const project=input.project||{id:input.projectId,name:input.projectName||input.goal,repository:input.repository,branch:input.branch||'main'};
+    const boot=bootstrapProject(project,{goal:input.goal,blueprint:input.blueprint,specialists:this.specialists});
 
     const orchestrator=new Orchestrator({
       eventBus:this.eventBus,
@@ -40,17 +40,23 @@ class ProjectRunner {
       lessonEngine:this.lessonEngine,
       companyMemory:this.companyMemory,
       projectMemory:this.projectMemory,
-      maxSteps:this.maxSteps
+      maxSteps:this.maxSteps,
+      heartbeat:this.options.heartbeat,
+      failureClassifier:this.options.failureClassifier,
+      toolRouter:this.options.toolRouter
     });
 
     for(const task of boot.plan.tasks) orchestrator.addTask(task);
+
+    const watchdog=this.watchdog||new Watchdog({eventBus:this.eventBus,timeoutMs:this.options.heartbeatTimeoutMs||30000});
 
     const worker=new WorkerEngine({
       orchestrator,
       actionProvider:this.actionProvider,
       verifier:this.verifier,
       maxTicks:this.maxTicks,
-      maxFixesPerTask:this.options.maxFixesPerTask||3
+      maxFixesPerTask:this.options.maxFixesPerTask||3,
+      watchdog
     });
 
     const scheduler=new OfficeScheduler({
@@ -61,6 +67,9 @@ class ProjectRunner {
     });
 
     const execution=await scheduler.run();
+    if(this.stateStore && typeof this.stateStore.update==='function') {
+      this.stateStore.update({projects:{[boot.project.id]:boot.project}});
+    }
     return {
       project:boot.project,
       plan:boot.plan,
