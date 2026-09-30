@@ -4,6 +4,7 @@ class AgentRuntime {
     if (!options.task) throw new Error('Task is required');
     this.specialist = options.specialist;
     this.task = options.task;
+    this.toolRouter = options.toolRouter || null;
     this.tools = options.tools || {};
     this.eventBus = options.eventBus || null;
     this.maxSteps = options.maxSteps || 10;
@@ -15,7 +16,7 @@ class AgentRuntime {
     return {
       specialist: this.specialist,
       task: this.task,
-      allowedTools: Object.keys(this.tools),
+      allowedTools: this.specialist.allowedTools || Object.keys(this.tools),
       expectedOutput: this.task.objective
     };
   }
