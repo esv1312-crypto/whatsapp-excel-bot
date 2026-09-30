@@ -9,6 +9,7 @@ const {AgentRuntime}=require('./agent_runtime');
 const {WorkerEngine}=require('./worker_engine');
 const {ToolRouter}=require('./tool_router');
 const {GitHubReader}=require('./tools/github_reader');
+const {GitHubWriter}=require('./tools/github_writer');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -23,6 +24,7 @@ module.exports={
   WorkerEngine,
   ToolRouter,
   GitHubReader,
+  GitHubWriter,
   plan,
   planAndAssign
 };
