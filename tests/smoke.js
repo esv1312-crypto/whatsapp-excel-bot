@@ -3,7 +3,7 @@ const office=require('../core');
 (async()=>{
 const events=[];
 const bus=new office.EventBus();
-for(const type of ['task.ready','task.completed','agent.started','agent.tool_called','agent.completed','task.verifying']) bus.on(type,event=>events.push(event.type));
+for(const type of ['task.ready','task.completed','agent.started','agent.tool_called','agent.completed','task.verifying','tool.requested','tool.completed']) bus.on(type,event=>events.push(event.type));
 
 const specialists=[
   {id:'product',skills:['product_management']},
@@ -12,7 +12,7 @@ const specialists=[
   {id:'qa',skills:['testing']}
 ];
 
-const orchestrator=new office.Orchestrator({eventBus:bus,specialists,tools:{echo:input=>({echo:input})},maxSteps:20});
+const orchestrator=new office.Orchestrator({eventBus:bus,specialists,tools:{echo:async input=>({echo:input})},maxSteps:20});
 const foundation=office.createTask({id:'foundation',objective:'Foundation task',requiredSkills:['software_development']});
 const dependent=office.createTask({id:'dependent',objective:'Dependent task',dependencies:['foundation'],requiredSkills:['testing']});
 orchestrator.addTasks([dependent,foundation]);
@@ -20,23 +20,37 @@ orchestrator.addTasks([dependent,foundation]);
 const worker=new office.WorkerEngine({
   orchestrator,
   maxTicks:10,
-  actionProvider:task=>[
+  actionProvider:async task=>[
     {type:'tool',name:'echo',input:task.id},
     {type:'complete',result:{ok:true,taskId:task.id}}
   ],
-  verifier:task=>({passed:true,details:{verifiedBy:'smoke'}})
+  verifier:async task=>({passed:true,details:{verifiedBy:'smoke'}})
 });
 
 const result=await worker.run();
-const routed=orchestrator.toolRouter.canUse('echo',{allowedTools:['echo']});
-if(!routed.allowed) throw new Error('ToolRouter did not allow permitted tool');
-const denied=orchestrator.toolRouter.canUse('echo',{allowedTools:['other']});
-if(denied.allowed) throw new Error('ToolRouter allowed forbidden tool');
 if(!result.complete) throw new Error('Worker did not complete the project');
 if(result.ticks!==3) throw new Error('Worker should use two execution ticks plus one completion check');
 if(orchestrator.getTask('foundation').status!=='COMPLETED') throw new Error('Foundation not completed');
 if(orchestrator.getTask('dependent').status!=='COMPLETED') throw new Error('Dependent not completed');
-for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed']) if(!events.includes(type)) throw new Error('Missing event: '+type);
+for(const type of ['agent.started','agent.tool_called','agent.completed','task.verifying','task.completed','tool.requested','tool.completed']) if(!events.includes(type)) throw new Error('Missing event: '+type);
+
+const routed=orchestrator.toolRouter.canUse('echo',{allowedTools:['echo']});
+if(!routed.allowed) throw new Error('ToolRouter did not allow permitted tool');
+const denied=orchestrator.toolRouter.canUse('echo',{allowedTools:['other']});
+if(denied.allowed) throw new Error('ToolRouter allowed forbidden tool');
+
+const fakeCalls=[];
+const gateway=new office.GitHubGateway({
+  fetch:async path=>{fakeCalls.push(['fetch',path]);return {ok:true,path};},
+  updateFile:async input=>{fakeCalls.push(['update',input.path]);return {commit_sha:'test-update'};},
+  createFile:async input=>{fakeCalls.push(['create',input.path]);return {commit_sha:'test-create'};}
+});
+const githubRouter=new office.ToolRouter({tools:gateway.tools(),eventBus:bus});
+const read=await githubRouter.execute('github.read_file',{repository:'owner/repo',path:'README.md'},{allowedTools:['github.read_file']});
+if(!read.ok||fakeCalls[0][1]!=='/repos/owner/repo/contents/README.md') throw new Error('GitHub Reader adapter failed');
+const write=await githubRouter.execute('github.write_file',{repository:'owner/repo',path:'README.md',content:'# test',sha:'blob-sha'},{allowedTools:['github.write_file']});
+if(write.commit_sha!=='test-update') throw new Error('GitHub Writer adapter failed');
+if(githubRouter.canUse('github.write_file',{allowedTools:['github.read_file']}).allowed) throw new Error('GitHub Writer permission check failed');
 
 const plan=office.planAndAssign('Build the AI-OFFICE simulator',{project:'office-simulator',specialists});
 if(plan.tasks.length!==4) throw new Error('Chief did not create the expected plan');
