@@ -3,6 +3,9 @@ const {Orchestrator}=require('./orchestrator');
 const {WorkerEngine}=require('./worker_engine');
 const {OfficeScheduler}=require('./scheduler');
 const {Watchdog}=require('./watchdog');
+const {ProjectDiscovery}=require('./project_discovery');
+const {ProjectContextBuilder}=require('./project_context');
+const {analyzeProjectContext,planFromContext}=require('./project_state');
 
 class ProjectRunner {
   constructor(options={}) {
@@ -23,6 +26,8 @@ class ProjectRunner {
     this.maxSteps=options.maxSteps||100;
     this.watchdog=options.watchdog||null;
     this._eventStoreBound=false;
+    this.discovery=options.discovery||null;
+    this.contextBuilder=options.contextBuilder||null;
   }
 
   async run(input={}) {
@@ -30,6 +35,18 @@ class ProjectRunner {
     this._bindEventStore();
 
     const project=input.project||{id:input.projectId,name:input.projectName||input.goal,repository:input.repository,branch:input.branch||'main'};
+    let reconnaissance=null;
+    let projectContext=null;
+    let contextAnalysis=null;
+    let contextPlan=null;
+    if(project.repository && this.options.githubReader){
+      const discovery=this.discovery||new ProjectDiscovery({githubReader:this.options.githubReader});
+      reconnaissance=await discovery.inspect(project);
+      const builder=this.contextBuilder||new ProjectContextBuilder({fetchFile:this.options.githubReader.readFile.bind(this.options.githubReader)});
+      projectContext=await builder.build(project,reconnaissance);
+      contextAnalysis=analyzeProjectContext(projectContext);
+      contextPlan=planFromContext(projectContext,{goal:input.goal});
+    }
     const boot=bootstrapProject(project,{goal:input.goal,blueprint:input.blueprint,specialists:this.specialists});
 
     const orchestrator=new Orchestrator({
@@ -74,6 +91,10 @@ class ProjectRunner {
     }
     return {
       project:boot.project,
+      reconnaissance,
+      projectContext,
+      contextAnalysis,
+      contextPlan,
       plan:boot.plan,
       execution,
       orchestrator,
