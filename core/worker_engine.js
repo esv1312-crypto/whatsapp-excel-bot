@@ -20,8 +20,8 @@ class WorkerEngine {
     this.orchestrator.refresh();
     const pendingVerification=this.orchestrator.listTasks().find(item=>item.status==='VERIFYING');
     if(pendingVerification){
-      await this._verifyTask(pendingVerification);
-      return {progressed:true,taskId:pendingVerification.id,status:this.orchestrator.getTask(pendingVerification.id).status};
+      const verification=await this._verifyTask(pendingVerification);
+      return {progressed:true,taskId:pendingVerification.id,status:this.orchestrator.getTask(pendingVerification.id).status,verification};
     }
     const task=this.orchestrator.listTasks().find(item=>item.status==='READY');
     if(!task) return {progressed:false,reason:this._isComplete()?'PROJECT_COMPLETE':'WAITING_FOR_READY_TASK'};
