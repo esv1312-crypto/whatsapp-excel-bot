@@ -6,6 +6,7 @@ require('./event_store');
 require('./scheduler');
 require('./project_bootstrap');
 require('./project_runner');
+require('./execution_observability');
 
 (async()=>{
 const learningStore=new office.ExperienceStore();
