@@ -33,7 +33,20 @@ const team=office.buildTeam(
 );
 if(!team.complete)throw new Error('Team builder failed');
 
-if(!events.includes('task.ready'))throw new Error('Ready event missing');
-if(!events.includes('task.completed'))throw new Error('Completed event missing');
+const specialists=[
+  {id:'product',skills:['product_management']},
+  {id:'architect',skills:['architecture']},
+  {id:'developer',skills:['software_development']},
+  {id:'qa',skills:['testing']}
+];
+
+const plan=office.planAndAssign('Build the AI-OFFICE simulator',{
+  project:'office-simulator',
+  specialists
+});
+
+if(plan.tasks.length!==4)throw new Error('Chief did not create the expected plan');
+if(!plan.team.complete)throw new Error('Chief could not assemble the required team');
+if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product')throw new Error('Initial ready task is incorrect');
 
 console.log('AI-OFFICE smoke test: PASS');
