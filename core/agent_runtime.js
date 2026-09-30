@@ -47,11 +47,14 @@ class AgentRuntime {
     throw new Error('Unknown agent action: ' + action.type);
   }
 
-  callTool(name, input) {
+  async callTool(name, input) {
+    this._emit('agent.tool_called', { name, input });
+    if (this.toolRouter) {
+      return this.toolRouter.execute(name, input, this.context());
+    }
     const tool = this.tools[name];
     if (typeof tool !== 'function') throw new Error('Tool not allowed: ' + name);
-    this._emit('agent.tool_called', { name, input });
-    const result = tool(input);
+    const result = await tool(input);
     this._emit('tool.completed', { name, result });
     return result;
   }
