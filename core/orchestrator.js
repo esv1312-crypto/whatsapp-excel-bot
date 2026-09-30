@@ -34,9 +34,7 @@ class Orchestrator{
 
   refresh(){
     for(const task of this.tasks.values()){
-      if(markReadyIfPossible(task,Object.fromEntries(this.tasks))){
-        this._emit('task.ready',task);
-      }
+      if(markReadyIfPossible(task,Object.fromEntries(this.tasks))) this._emit('task.ready',task);
     }
     return this.listTasks();
   }
@@ -57,28 +55,20 @@ class Orchestrator{
     if(!task.assignee) throw new Error('Task must be assigned before start');
     transitionTask(task,TASK_STATUS.IN_PROGRESS);
     const specialist=this._findSpecialistById(task.assignee);
-    const agent=this.agentFactory({
-      specialist,
-      task,
-      tools:this.tools,
-      toolRouter:this.toolRouter,
-      eventBus:this.eventBus,
-      maxSteps:10
-    });
+    const agent=this.agentFactory({specialist,task,tools:this.tools,toolRouter:this.toolRouter,eventBus:this.eventBus,maxSteps:10});
     this.activeAgents.set(task.id,agent);
     agent.start();
     this._emit('task.started',task);
     return agent;
   }
 
-  runAgent(taskId,actions=[]){
+  async runAgent(taskId,actions=[]){
     const agent=this.activeAgents.get(taskId);
     if(!agent) throw new Error('No active agent for task: '+taskId);
     const task=this._requireTask(taskId);
-
     for(const action of actions){
       this.step();
-      const result=agent.run(action);
+      const result=await agent.run(action);
       if(result&&result.completed){
         this.implement(taskId,result.result);
         break;
@@ -122,25 +112,19 @@ class Orchestrator{
     return task;
   }
 
-  _findSpecialist(skills=[]){
-    return this.specialists.find(s=>skills.every(skill=>(s.skills||[]).includes(skill)))||null;
-  }
-
+  _findSpecialist(skills=[]){return this.specialists.find(s=>skills.every(skill=>(s.skills||[]).includes(skill)))||null;}
   _findSpecialistById(id){
     const specialist=this.specialists.find(s=>s.id===id);
     if(!specialist) throw new Error('Specialist not found: '+id);
     return specialist;
   }
-
   _requireTask(taskId){
     const task=this.getTask(taskId);
     if(!task) throw new Error('Task not found: '+taskId);
     return task;
   }
-
   _emit(type,task){
     if(this.eventBus) this.eventBus.emit(type,{taskId:task.id,status:task.status,task});
   }
 }
-
 module.exports={Orchestrator};
