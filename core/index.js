@@ -6,6 +6,7 @@ const {verify}=require('./verification');
 const {EventBus}=require('./events');
 const {Orchestrator}=require('./orchestrator');
 const {AgentRuntime}=require('./agent_runtime');
+const {WorkerEngine}=require('./worker_engine');
 const {plan,planAndAssign}=require('./chief_of_staff');
 
 module.exports={
@@ -17,6 +18,7 @@ module.exports={
   EventBus,
   Orchestrator,
   AgentRuntime,
+  WorkerEngine,
   plan,
   planAndAssign
 };
