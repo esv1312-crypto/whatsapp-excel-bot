@@ -26,13 +26,12 @@ async function run(){
       return [{type:'complete',result:{ok:true,commitSha:`${task.id}-commit-${n}`}}];
     },
     verifier:async task=>{
-      if(task.id==='implementation' && (attempts.get(task.id)||0)===1) return {passed:false,details:{reason:'test failure',missing:['ci']}};
+      if(task.id==='implementation' && task.commitSha==='implementation-commit-1') return {passed:false,details:{reason:'test failure',missing:['ci']}};
       return {passed:true,details:{evidence:{ok:true}}};
     }
   });
 
   const result=await runner.run({project:{id:'full-cycle',name:'Full Cycle'},goal:'Complete an end-to-end AI-OFFICE lifecycle'});
-  console.log('DEBUG_FULL_OFFICE',JSON.stringify({status:result.status,execution:result.execution,tasks:result.orchestrator.listTasks().map(t=>({id:t.id,status:t.status,commitSha:t.commitSha,result:t.result,verification:t.verification}))},null,2));
   assert.equal(result.status,'COMPLETED');
   assert(result.execution.complete);
   const tasks=result.orchestrator.listTasks();
