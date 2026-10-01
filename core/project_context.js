@@ -51,9 +51,6 @@ class ProjectContextBuilder {
       ...(project.entrypoints || []),
       ...(discovery.entrypoints || []),
       ...(discovery.ciWorkflows || []),
-      'README.md',
-      'README.txt',
-      'BUILD_PIPELINE.md',
       'build.gradle',
       'settings.gradle',
       'app/build.gradle'
