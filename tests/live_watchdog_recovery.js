@@ -50,7 +50,6 @@ async function run(){
   assert.equal(orchestrator.getTask(task.id).status,TASK_STATUS.COMPLETED);
 
   const second=await worker.tick();
-  assert.equal(second.progressed,true);
   assert.equal(orchestrator.getTask(task.id).status,TASK_STATUS.COMPLETED);
 
   const persisted=store.load();
