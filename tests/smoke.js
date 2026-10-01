@@ -7,6 +7,7 @@ const {run:runWatchdogRecovery}=require('./watchdog_recovery');
 const {run:runLiveWatchdogRecovery}=require('./live_watchdog_recovery');
 const {run:runFullOfficeLifecycle}=require('./full_office_lifecycle');
 const {run:runFullE2ELifecycle}=require('./full_e2e_lifecycle');
+const {run:runFirstLaunch}=require('./first_launch');
 require('./tool_router_guardrails');
 require('./state_store');
 require('./event_store');
@@ -117,6 +118,7 @@ await runWatchdogRecovery();
 await runLiveWatchdogRecovery();
 await runFullOfficeLifecycle();
 await runFullE2ELifecycle();
+await runFirstLaunch();
 
 const memory=new office.CompanyMemory();
 memory.addLesson(lesson);
