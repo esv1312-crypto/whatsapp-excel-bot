@@ -51,7 +51,7 @@ class ProjectRunner {
     const existingState=this.stateStore&&typeof this.stateStore.load==='function'?this.stateStore.load():null;
     const existingProject=existingState&&existingState.projects?existingState.projects[project.id]:null;
     const persistedTaskMap=existingState&&existingState.tasks?existingState.tasks:{};
-    const boot=bootstrapProject(project,{goal:input.goal,blueprint:input.blueprint,specialists:this.specialists});
+    const boot=bootstrapProject(project,{goal:input.goal,blueprint:input.blueprint||this.options.blueprint,specialists:this.specialists});
     if(existingProject){
       boot.project={...boot.project,...existingProject,status:existingProject.status||'ACTIVE'};
       const existingTaskIds=Array.isArray(existingProject.tasks)?existingProject.tasks:[];
