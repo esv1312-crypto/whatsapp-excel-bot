@@ -63,7 +63,7 @@ async function run(){
   assert(fix,'Fix task was not created');
   assert.equal(fix.status,'COMPLETED');
   assert.equal(verificationCalls.get('original-commit'),2);
-  assert.equal(verificationCalls.get('fix-commit'),1);
+  assert.equal(verificationCalls.get('fix-commit'),2);
   assert(events.includes('task.waiting:implementation'));
   assert(events.includes('task.failed:implementation'));
   assert(events.includes('task.fixing:implementation'));
