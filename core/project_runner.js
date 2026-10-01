@@ -84,12 +84,25 @@ class ProjectRunner {
 
     for(const task of boot.plan.tasks) orchestrator.addTask(task);
 
-    const watchdog=this.watchdog||new Watchdog({eventBus:this.eventBus,timeoutMs:this.options.heartbeatTimeoutMs||30000});
-
     // Recover persisted work before creating the worker so construction cannot
     // silently change task state or bypass recovery events.
     const recoveryManager=this.options.recoveryManager||new RecoveryManager({orchestrator,stateStore:this.stateStore,eventBus:this.eventBus});
     const recovery=recoveryManager.recover();
+
+    // A live execution can stall without a process restart. Route watchdog
+    // recovery through the same RecoveryManager used for restart recovery.
+    const watchdog=this.watchdog||new Watchdog({
+      eventBus:this.eventBus,
+      heartbeat:this.options.heartbeat||orchestrator.heartbeat,
+      timeoutMs:this.options.heartbeatTimeoutMs||30000,
+      onRecover:async execution=>{
+        const recovered=recoveryManager.recoverExecution(execution);
+        if(this.options.heartbeat||orchestrator.heartbeat) {
+          (this.options.heartbeat||orchestrator.heartbeat).stop(execution.executionId,{status:'RECOVERED'});
+        }
+        return recovered;
+      }
+    });
 
     const worker=new WorkerEngine({
       orchestrator,
