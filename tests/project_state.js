@@ -1,1 +1,17 @@
-const assert=require('assert');\nconst {analyzeProjectContext,planFromContext}=require('../core/project_state');\nconst context={project:{id:'pognali3',name:'Погнали',type:'android'},importantFiles:['app/build.gradle','MainActivity.java'],entrypoints:['MainActivity.java'],ciWorkflows:['.github/workflows/android.yml'],capabilities:['android','android_webview','geolocation','image_file_selection','github_actions_ci']};\nconst analysis=analyzeProjectContext(context);\nassert.strictEqual(analysis.projectId,'pognali3');\nassert(analysis.summary.includes('Погнали'));\nassert.deepStrictEqual(analysis.findings,[]);\nassert.deepStrictEqual(analysis.priorities,[]);\nconst plan=planFromContext(context);\nassert.strictEqual(plan.tasks.length,3);\nassert.strictEqual(plan.tasks[1].dependencies[0],'project_state');\nassert.strictEqual(plan.tasks[2].requiredSkills[0],'testing');\nconst noCi={...context,ciWorkflows:[]};\nconst noCiPlan=planFromContext(noCi);\nassert(noCiPlan.analysis.priorities.includes('establish_ci'));\nassert(noCiPlan.tasks[2].objective.includes('establish or repair CI'));\nconsole.log('project_state tests passed');\n
+const assert=require('assert');
+const {analyzeProjectContext,planFromContext}=require('../core/project_state');
+const context={project:{id:'pognali3',name:'Погнали',type:'android'},importantFiles:['app/build.gradle','MainActivity.java'],entrypoints:['MainActivity.java'],ciWorkflows:['.github/workflows/android.yml'],capabilities:['android','android_webview','geolocation','image_file_selection','github_actions_ci']};
+const analysis=analyzeProjectContext(context);
+assert.strictEqual(analysis.projectId,'pognali3');
+assert(analysis.summary.includes('Погнали'));
+assert.deepStrictEqual(analysis.findings,[]);
+assert.deepStrictEqual(analysis.priorities,[]);
+const plan=planFromContext(context);
+assert.strictEqual(plan.tasks.length,3);
+assert.strictEqual(plan.tasks[1].dependencies[0],'project_state');
+assert.strictEqual(plan.tasks[2].requiredSkills[0],'testing');
+const noCi={...context,ciWorkflows:[]};
+const noCiPlan=planFromContext(noCi);
+assert(noCiPlan.analysis.priorities.includes('establish_ci'));
+assert(noCiPlan.tasks[2].objective.includes('establish or repair CI'));
+console.log('project_state tests passed');
