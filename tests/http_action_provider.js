@@ -5,7 +5,7 @@ const {HttpActionProvider}=require('../core');
 async function run(){
   const server=http.createServer((req,res)=>{
     let body='';
-    req.on('data,chunk=>body+=chunk);
+    req.on('data',chunk=>body+=chunk);
     req.on('end',()=>{
       const parsed=JSON.parse(body);
       assert.equal(parsed.task.id,'demo-task');
