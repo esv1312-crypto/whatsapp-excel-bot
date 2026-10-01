@@ -1,51 +1,113 @@
-name: AI-OFFICE CI
+name: AI-OFFICE MEGA AUDIT
 on:
   push:
     branches:
       - main
   pull_request:
+
 jobs:
-  audit:
+  mega-audit:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install
         run: npm install
-      - name: Full office test suite
+
+      - name: Run every office test
+        shell: bash
         run: |
-          set +e
+          set -uo pipefail
           failures=0
           : > office-audit.log
           for f in tests/*.js; do
             echo "=== $f ===" | tee -a office-audit.log
+            set +e
             node "$f" 2>&1 | tee -a office-audit.log
-            rc=$?
+            rc=${PIPESTATUS[0]}
+            set -e
             if [ "$rc" -ne 0 ]; then
               failures=$((failures+1))
-              echo "FAIL $f" | tee -a office-audit.log
+              echo "FAIL $f (exit $rc)" | tee -a office-audit.log
             else
               echo "PASS $f" | tee -a office-audit.log
             fi
           done
           echo "FAILURES=$failures" | tee -a office-audit.log
           exit "$failures"
-      - name: Verify Pognali MCP
+
+      - name: Live MCP initialize
         if: always()
+        shell: bash
         run: |
-          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ai-office-ci","version":"1.0"}}}'
-      - name: Verify Pognali files
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ai-office-mega-audit","version":"1.0"}}}'             | tee mcp-initialize.json
+          grep -q '"result"' mcp-initialize.json
+
+      - name: Live MCP tools list
         if: always()
+        shell: bash
         run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'             | tee mcp-tools.json
+          for tool in search_events get_event join_event create_event get_messages prepare_invite send_message create_invite get_user_invites accept_invite decline_invite; do
+            grep -q "\"name\"[[:space:]]*:[[:space:]]*\"$tool\"" mcp-tools.json
+          done
+
+      - name: Live MCP read-only tool calls
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          call_tool() {
+            local id="$1"
+            local name="$2"
+            local args="$3"
+            curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp               -H 'Content-Type: application/json'               -H 'Accept: application/json, text/event-stream'               --data "{\"jsonrpc\":\"2.0\",\"id\":$id,\"method\":\"tools/call\",\"params\":{\"name\":\"$name\",\"arguments\":$args}}" 
+          }
+          call_tool 3 search_events '{}' | tee mcp-search-events.json
+          grep -q '"result"' mcp-search-events.json
+          call_tool 4 get_user_invites '{"user_id":"chatgpt-user"}' | tee mcp-invites.json
+          grep -q '"result"' mcp-invites.json
+          echo "LIVE_READONLY_TOOL_CALLS=PASS" | tee -a office-audit.log
+
+      - name: Verify Pognali source files
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
           curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/mcp/server.py >/dev/null
           curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/app/pognali-events.html >/dev/null
-      - name: Upload audit
+          echo "POGNALI_SOURCE_FILES=PASS" | tee -a office-audit.log
+
+      - name: Audit summary
+        if: always()
+        run: |
+          {
+            echo "=== AI-OFFICE MEGA AUDIT SUMMARY ==="
+            echo "CORE_TESTS=see full office test suite"
+            echo "MCP_INITIALIZE=PASS if previous step passed"
+            echo "MCP_TOOLS_LIST=PASS if previous step passed"
+            echo "MCP_READONLY_CALLS=PASS if previous step passed"
+            echo "POGNALI_SOURCE_FILES=PASS if previous step passed"
+            echo "CHATGPT_RUNTIME_TOOL_SELECTION=MANUAL_ONLY"
+            echo "CHATGPT_RUNTIME_NOTE=CI cannot impersonate a connected ChatGPT conversation; connect https://pognali-mcp.onrender.com/mcp in ChatGPT Developer Mode and run a prompt that requires search_events."
+          } | tee -a office-audit.log
+
+      - name: Upload mega audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-office-audit
-          path: office-audit.log
+          name: ai-office-mega-audit
+          path: |
+            office-audit.log
+            mcp-initialize.json
+            mcp-tools.json
+            mcp-search-events.json
+            mcp-invites.json
