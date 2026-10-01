@@ -3,6 +3,8 @@ name: AI-OFFICE Room Launch
 on:
   issue_comment:
     types: [created]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -11,15 +13,18 @@ permissions:
 jobs:
   live-execute:
     if: >-
-      github.event.issue.pull_request == null &&
-      github.event.comment.body == '/office execute'
+      ((github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        github.event.comment.body == '/office execute') ||
+       (github.event_name == 'push' &&
+        contains(github.event.head_commit.message, '[office execute]')))
     runs-on: ubuntu-latest
     steps:
       - name: Start — INTAKE
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "## AI-OFFICE LIVE STATUS
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "## AI-OFFICE LIVE STATUS
 **RUNNING** — этап: **INTAKE**
 Задача принята. Scope: `esv1312-crypto/pognali3` / `chatgpt-mvp-skeleton`.
 Ограничение: Android/основной «Погнали» не трогаем.
@@ -39,7 +44,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "### LIVE → RECON
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "### LIVE → RECON
 Проверяю целевой репозиторий, ветку и ChatGPT-контур."
           set -e
           curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/mcp/server.py -o /tmp/server.py
@@ -53,14 +58,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "### LIVE → PLAN
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "### LIVE → PLAN
 **RUNNING** — определяю проверяемые точки: Core → MCP → tools → UI resource → evidence."
 
       - name: VERIFY CORE
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "### LIVE → VERIFY
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "### LIVE → VERIFY
 **RUNNING** — запускаю тесты AI-ОФИСА и проверяю live MCP."
           npm install
           set -o pipefail
@@ -85,7 +90,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "### LIVE → EXECUTE
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "### LIVE → EXECUTE
 **WAITING_FOR_DRIVER** — CI видит состояние и проверки, но не должен имитировать LLM/Codex-исполнителя. Реальное изменение `pognali3` выполняется только подключённым AI runtime.
 Это отображается явно, а не маскируется под RUNNING."
 
@@ -94,7 +99,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "### LIVE → EVIDENCE
+          gh issue comment "${{ github.event.issue.number || 3 }}" --body "### LIVE → EVIDENCE
 **DONE** — результат текущего запуска зафиксирован в Actions. Открытый вопрос: реальный model-side driver для записи изменений в `pognali3/chatgpt-mvp-skeleton`."
 
   full-audit:
