@@ -88,7 +88,10 @@ class WorkerEngine {
       const evaluation=verification.evaluation||{};
       const fix={id:`${task.id}:fix:${count+1}`,project:task.project,parentTask:task.id,objective:`Fix verification failures for task ${task.id}`,requiredSkills:task.requiredSkills||[],dependencies:[],status:'CREATED',result:null,verification:null,waitingForVerification:false,history:[{status:'CREATED',at:new Date().toISOString()}],reason:evaluation.missing||evaluation.missingChecks||[],verification:evaluation};
       this.orchestrator.addTask(fix);
-      if(this.experienceStore && typeof this.experienceStore.findSimilar==='function') fix.priorExperience=this.experienceStore.findSimilar({project:task.project,objective:fix.objective,requiredSkills:fix.requiredSkills}).slice(0,5);
+      if(this.experienceStore){
+        if(typeof this.experienceStore.findSimilar==='function') fix.priorExperience=this.experienceStore.findSimilar({project:task.project,objective:fix.objective,requiredSkills:fix.requiredSkills}).slice(0,5);
+        if((!fix.priorExperience||fix.priorExperience.length===0) && typeof this.experienceStore.list==='function') fix.priorExperience=this.experienceStore.list({project:task.project}).slice(-5);
+      }
       return fix;
     }
     return null;
