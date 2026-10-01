@@ -2,6 +2,10 @@ const office=require('../core');
 const {run:runWorkerFixRetest}=require('./worker_fix_retest');
 const {run:runRecoveryManager}=require('./recovery_manager');
 const {run:runProjectRunnerRestart}=require('./project_runner_restart');
+const {run:runMultiStateRecovery}=require('./multi_state_recovery');
+const {run:runWatchdogRecovery}=require('./watchdog_recovery');
+const {run:runLiveWatchdogRecovery}=require('./live_watchdog_recovery');
+const {run:runFullOfficeLifecycle}=require('./full_office_lifecycle');
 require('./tool_router_guardrails');
 require('./state_store');
 require('./event_store');
@@ -107,6 +111,10 @@ if(plan.readyTasks.length!==1||plan.readyTasks[0]!=='product') throw new Error('
 await runWorkerFixRetest();
 await runRecoveryManager();
 await runProjectRunnerRestart();
+await runMultiStateRecovery();
+await runWatchdogRecovery();
+await runLiveWatchdogRecovery();
+await runFullOfficeLifecycle();
 
 const memory=new office.CompanyMemory();
 memory.addLesson(lesson);
