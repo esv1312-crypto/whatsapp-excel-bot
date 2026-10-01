@@ -47,7 +47,7 @@ const files = {
   assert(context.capabilities.includes('github_actions_ci'));
   assert(!context.importantFiles.some(path=>path.endsWith('.apk')));
   assert(calls.every(path=>!path.startsWith('app/build/')));
-  assert.throws(
+  await assert.rejects(
     ()=>builder.build(project,{projectId:'other'}),
     /does not match project/
   );
