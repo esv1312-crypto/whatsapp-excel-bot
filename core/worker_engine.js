@@ -28,9 +28,9 @@ class WorkerEngine {
         if(inspection.status==='STALLED') await this.watchdog.recover(agent);
       }
     }
-    const pendingVerification=this.orchestrator.listTasks().find(item=>item.status==='VERIFYING' || (item.status==='WAITING' && item.waitingForVerification));
+    const pendingVerification=this.orchestrator.listTasks().find(item=>item.status==='VERIFYING' || item.status==='RETEST' || (item.status==='WAITING' && item.waitingForVerification));
     if(pendingVerification){
-      if(pendingVerification.status==='WAITING') this.orchestrator.retest(pendingVerification.id);
+      if(pendingVerification.status==='WAITING' || pendingVerification.status==='RETEST') this.orchestrator.retest(pendingVerification.id);
       const verification=await this._verifyTask(pendingVerification);
       return {progressed:true,taskId:pendingVerification.id,status:this.orchestrator.getTask(pendingVerification.id).status,verification};
     }
