@@ -3,7 +3,7 @@ const registry=require('./specialist_registry');
 const {buildTeam}=require('./team_builder');
 const {createProject,bootstrapProject}=require('./project_engine');
 const {verify}=require('./verification');
-const {EventBus}=require('./events');
+const {EventBus}=require('./event_bus');
 const {Orchestrator}=require('./orchestrator');
 const {AgentRuntime}=require('./agent_runtime');
 const {WorkerEngine}=require('./worker_engine');
@@ -39,51 +39,4 @@ const {Watchdog}=require('./watchdog');
 const {FailureClassifier,FAILURE_CLASS}=require('./failure_classifier');
 const {plan,planAndAssign}=require('./chief_of_staff');
 const {HttpActionProvider}=require('./providers/http_action_provider');
-
-module.exports={
-  ...task,
-  ...registry,
-  buildTeam,
-  createProject,
-  bootstrapProject,
-  verify,
-  EventBus,
-  Orchestrator,
-  AgentRuntime,
-  WorkerEngine,
-  ToolRouter,
-  ToolPolicy,
-  GitHubReader,
-  GitHubWriter,
-  GitHubGateway,
-  GitHubRuntimeAdapter,
-  ProjectDiscovery,
-  ProjectContextBuilder,
-  analyzeProjectContext,
-  planFromContext,
-  ProjectSupervisor,
-  GitHubEvidenceCollector,
-  VerificationController,
-  EvidenceInterpreter,
-  VerificationPolicy,
-  GitHubCommitTool,
-  GitHubCommitRuntimeAdapter,
-  CIController,
-  ExperienceStore,
-  LessonEngine,
-  CompanyMemory,
-  ProjectMemory,
-  StateStore,
-  EventStore,
-  OfficeScheduler,
-  ProjectRunner,
-  OfficeRuntime,
-  RecoveryManager,
-  HeartbeatManager,
-  Watchdog,
-  FailureClassifier,
-  FAILURE_CLASS,
-  HttpActionProvider,
-  plan,
-  planAndAssign
-};
+module.exports={...task,...registry,buildTeam,createProject,bootstrapProject,verify,EventBus,Orchestrator,AgentRuntime,WorkerEngine,ToolRouter,ToolPolicy,GitHubReader,GitHubWriter,GitHubGateway,GitHubRuntimeAdapter,ProjectDiscovery,ProjectContextBuilder,analyzeProjectContext,planFromContext,ProjectSupervisor,GitHubEvidenceCollector,VerificationController,EvidenceInterpreter,VerificationPolicy,GitHubCommitTool,GitHubCommitRuntimeAdapter,CIController,ExperienceStore,LessonEngine,CompanyMemory,ProjectMemory,StateStore,EventStore,OfficeScheduler,ProjectRunner,OfficeRuntime,RecoveryManager,HeartbeatManager,Watchdog,FailureClassifier,FAILURE_CLASS,HttpActionProvider,plan,planAndAssign};
