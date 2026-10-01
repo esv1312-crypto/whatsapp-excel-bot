@@ -1,1 +1,14 @@
-const assert=require('assert');\nconst {ProjectSupervisor}=require('../core/supervisor');\nconst s=new ProjectSupervisor();\nconst good=s.evaluate({id:'t1',result:'done',verification:{passed:true,evidence:{tests:'ok'}}});\nassert.strictEqual(good.passed,true);\nconst bad=s.evaluate({id:'t2',project:'pognali3',result:'done',verification:{passed:true,evidence:{}}});\nassert.strictEqual(bad.passed,false);\nassert(bad.missing.includes('evidence'));\nassert.strictEqual(s.shouldFix(bad),true);\nconst fix=s.createFixTask({id:'t2',project:'pognali3',requiredSkills:['software_development']},bad);\nassert.strictEqual(fix.parentTask,'t2');\nassert.strictEqual(fix.project,'pognali3');\nassert(fix.reason.includes('evidence'));\nconsole.log('supervisor tests passed');\n
+const assert=require('assert');
+const {ProjectSupervisor}=require('../core/supervisor');
+const s=new ProjectSupervisor();
+const good=s.evaluate({id:'t1',result:'done',verification:{passed:true,evidence:{tests:'ok'}}});
+assert.strictEqual(good.passed,true);
+const bad=s.evaluate({id:'t2',project:'pognali3',result:'done',verification:{passed:true,evidence:{}}});
+assert.strictEqual(bad.passed,false);
+assert(bad.missing.includes('evidence'));
+assert.strictEqual(s.shouldFix(bad),true);
+const fix=s.createFixTask({id:'t2',project:'pognali3',requiredSkills:['software_development']},bad);
+assert.strictEqual(fix.parentTask,'t2');
+assert.strictEqual(fix.project,'pognali3');
+assert(fix.reason.includes('evidence'));
+console.log('supervisor tests passed');
