@@ -12,18 +12,17 @@ permissions:
 
 jobs:
   live-execute:
-    if: >-
-      ((github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request == null &&
-        github.event.comment.body == '/office execute') ||
-       (github.event_name == 'push' &&
-        contains(github.event.head_commit.message, '[office execute]')))
+    if: github.event_name == 'push' || (github.event_name == 'issue_comment' && github.event.issue.pull_request == null && github.event.comment.body == '/office execute')
     runs-on: ubuntu-latest
     steps:
       - name: Start — INTAKE
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event_name }}" = "push" ] && ! echo "${{ github.event.head_commit.message }}" | grep -Fq '[office execute]'; then
+            echo 'Push is not an execute trigger; exiting cleanly.'
+            exit 0
+          fi
           gh issue comment "${{ github.event.issue.number || 3 }}" --body "## AI-OFFICE LIVE STATUS
 **RUNNING** — этап: **INTAKE**
 Задача принята. Scope: `esv1312-crypto/pognali3` / `chatgpt-mvp-skeleton`.
