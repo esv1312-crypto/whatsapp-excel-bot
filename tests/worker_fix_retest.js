@@ -64,6 +64,7 @@ async function run(){
   });
 
   const result=await worker.run();
+  console.log('DEBUG_WORKER_RESULT',JSON.stringify({result,tasks:orchestrator.listTasks().map(t=>({id:t.id,status:t.status,parentTask:t.parentTask,commitSha:t.commitSha,result:t.result}))},null,2));
   assert.strictEqual(result.complete,true,'Worker did not finish repair cycle');
 
   const finishedParent=orchestrator.getTask('repair-cycle');
