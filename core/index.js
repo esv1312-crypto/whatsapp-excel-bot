@@ -38,6 +38,7 @@ const {HeartbeatManager}=require('./heartbeat');
 const {Watchdog}=require('./watchdog');
 const {FailureClassifier,FAILURE_CLASS}=require('./failure_classifier');
 const {plan,planAndAssign}=require('./chief_of_staff');
+const {HttpActionProvider}=require('./providers/http_action_provider');
 
 module.exports={
   ...task,
@@ -82,6 +83,7 @@ module.exports={
   Watchdog,
   FailureClassifier,
   FAILURE_CLASS,
+  HttpActionProvider,
   plan,
   planAndAssign
 };
