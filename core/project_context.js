@@ -60,10 +60,14 @@ class ProjectContextBuilder {
     ];
 
     return [...new Set(candidates)].filter(path =>
-      !this._isArtifact(path) &&
+      !this._isArtifact(path) && !this._isDirectoryLike(path) &&
       (path.includes('/') || path.endsWith('.md') || path.endsWith('.txt') ||
        path === 'build.gradle' || path === 'settings.gradle')
     );
+  }
+
+  _isDirectoryLike(path) {
+    return !path.includes('.') && !path.endsWith('build.gradle') && !path.endsWith('settings.gradle');
   }
 
   _isArtifact(path) {
