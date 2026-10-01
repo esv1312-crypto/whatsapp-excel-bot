@@ -20,12 +20,46 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run smoke tests
-        run: npm test 2>&1 | tee smoke-test.log
+      - name: Run complete AI-OFFICE test suite
+        shell: bash
+        run: |
+          set +e
+          : > office-audit.log
+          failures=0
+          for f in tests/*.js; do
+            echo "=== TEST $f ===" | tee -a office-audit.log
+            node "$f" 2>&1 | tee -a office-audit.log
+            rc=${PIPESTATUS[0]}
+            if [ "$rc" -ne 0 ]; then
+              echo "FAIL: $f (exit $rc)" | tee -a office-audit.log
+              failures=$((failures+1))
+            else
+              echo "PASS: $f" | tee -a office-audit.log
+            fi
+          done
+          echo "=== TEST SUMMARY: failures=$failures ===" | tee -a office-audit.log
+          exit "$failures"
 
-      - name: Upload smoke test log
+      - name: Verify Pognali MCP and UI
+        if: always()
+        shell: bash
+        run: |
+          set -e
+          curl --fail --silent --show-error --max-time 30 https://pognali-mcp.onrender.com/ >/dev/null
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ai-office-ci","version":"1.0"}}}' \
+            | tee mcp-initialize.log
+          grep -Eq '"result"|"jsonrpc"' mcp-initialize.log
+          curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/mcp/server.py >/dev/null
+          curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/app/pognali-events.html >/dev/null
+
+      - name: Upload full audit evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-test-log
-          path: smoke-test.log
+          name: ai-office-full-audit
+          path: |
+            office-audit.log
+            mcp-initialize.log
