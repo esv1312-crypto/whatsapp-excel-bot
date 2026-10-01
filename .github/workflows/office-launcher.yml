@@ -1,0 +1,60 @@
+name: AI-OFFICE ONE COMMAND LAUNCHER
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  launch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Office
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$COMMIT_MESSAGE" | grep -Fq '[office execute]'; then
+            echo 'NO_OFFICE_COMMAND=SKIP'
+            exit 0
+          fi
+
+          post() {
+            gh issue comment 3 --repo "${{ github.repository }}" --body "$1"
+          }
+
+          post '## AI-OFFICE LIVE — START
+**INTAKE → RECON → VERIFY → EXECUTE → EVIDENCE**'
+
+          post '### INTAKE
+Target: `esv1312-crypto/pognali3` / `chatgpt-mvp-skeleton`.
+Android/main «Погнали» не трогаем.'
+
+          post '### RECON
+Читаю Pognali GPT source и UI.'
+          curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/mcp/server.py -o /tmp/server.py
+          curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/app/pognali-events.html -o /tmp/ui.html
+          grep -q 'MCPServer' /tmp/server.py
+          grep -q 'ui://pognali/events-v1.html' /tmp/server.py
+
+          post '### VERIFY
+Проверяю live MCP.'
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ai-office-launcher","version":"1.0"}}}' > /tmp/mcp.json
+          grep -q '"result"' /tmp/mcp.json
+
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' > /tmp/tools.json
+          for tool in search_events get_event join_event create_event get_messages prepare_invite send_message create_invite get_user_invites accept_invite decline_invite; do
+            grep -q "\"name\"[[:space:]]*:[[:space:]]*\"$tool\"" /tmp/tools.json
+          done
+
+          post '### EXECUTE
+Безопасный read-only проход выполнен: source + UI + MCP + tools/list подтверждены.'
+
+          post '### EVIDENCE
+**DONE** — AI-OFFICE реально запустился через One Command Launcher.
+Model-side выбор MCP-инструмента самим ChatGPT по-прежнему требует отдельного теста в подключённом Developer Mode.'
