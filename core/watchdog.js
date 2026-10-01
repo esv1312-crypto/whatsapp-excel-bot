@@ -1,10 +1,13 @@
 class Watchdog {
   constructor(options={}) {
     this.timeoutMs=options.timeoutMs||30000;
+    this.intervalMs=options.intervalMs||Math.max(1000,Math.floor(this.timeoutMs/2));
     this.eventBus=options.eventBus||null;
     this.heartbeat=options.heartbeat||null;
     this.onRecover=options.onRecover||null;
     this.onEscalate=options.onEscalate||null;
+    this.timer=null;
+    this.recovering=new Set();
   }
 
   inspect(execution) {
@@ -29,6 +32,41 @@ class Watchdog {
     this._emit('watchdog.escalated',inspection);
     if(typeof this.onEscalate==='function') await this.onEscalate(execution,inspection);
     return {status:'ESCALATED',...inspection};
+  }
+
+  start(options={}) {
+    if(this.timer) return false;
+    const intervalMs=options.intervalMs||this.intervalMs;
+    if(!this.heartbeat || typeof this.heartbeat.list!=='function') throw new Error('HeartbeatManager with list() is required');
+    this.timer=setInterval(()=>this.check().catch(error=>this._emit('watchdog.error',{error:error.message})),intervalMs);
+    return true;
+  }
+
+  async check() {
+    if(!this.heartbeat || typeof this.heartbeat.list!=='function') return [];
+    const results=[];
+    for(const execution of this.heartbeat.list()) {
+      if(this.recovering.has(execution.executionId)) continue;
+      const inspection=this.inspect(execution);
+      if(inspection.status!=='STALLED') {
+        results.push(inspection);
+        continue;
+      }
+      this.recovering.add(execution.executionId);
+      try {
+        results.push(await this.recover(execution));
+      } finally {
+        this.recovering.delete(execution.executionId);
+      }
+    }
+    return results;
+  }
+
+  stop() {
+    if(!this.timer) return false;
+    clearInterval(this.timer);
+    this.timer=null;
+    return true;
   }
 
   _emit(type,data){if(this.eventBus)this.eventBus.emit(type,data);}
