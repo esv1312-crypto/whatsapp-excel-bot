@@ -1,0 +1,1 @@
+AI-OFFICE command marker. A commit containing [office execute] launches the one-command Office runner.
