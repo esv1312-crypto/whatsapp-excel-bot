@@ -54,7 +54,6 @@ async function run(){
     goal:'Run a complete implementation, CI wait, failure, fix, retest and persistence cycle'
   });
 
-  console.log('DEBUG_FULL_E2E',JSON.stringify({status:result.status,execution:result.execution,tasks:result.orchestrator.listTasks().map(t=>({id:t.id,status:t.status,commitSha:t.commitSha,result:t.result,verification:t.verification}))},null,2));
   assert.equal(result.status,'COMPLETED');
   assert.equal(result.execution.complete,true);
   const original=result.orchestrator.getTask('implementation');
