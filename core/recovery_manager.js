@@ -43,6 +43,10 @@ class RecoveryManager {
       }
 
       if(task.status===TASK_STATUS.WAITING) {
+        if(task.waitingForVerification) {
+          waiting.push(task.id);
+          continue;
+        }
         if(dependenciesReady(task,byId)) {
           transitionTask(task,TASK_STATUS.READY);
           recovered.push({taskId:task.id,previousStatus:TASK_STATUS.WAITING,status:TASK_STATUS.READY,reason:'DEPENDENCIES_ALREADY_COMPLETE'});
