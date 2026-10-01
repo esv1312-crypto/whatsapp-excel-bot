@@ -105,6 +105,7 @@ class Orchestrator{
   implement(taskId,result){
     const task=this._requireTask(taskId);
     task.result=result;
+    if(result && result.commitSha) task.commitSha=result.commitSha;
     transitionTask(task,TASK_STATUS.IMPLEMENTED);
     this._emit('task.implemented',task);
     transitionTask(task,TASK_STATUS.VERIFYING);
