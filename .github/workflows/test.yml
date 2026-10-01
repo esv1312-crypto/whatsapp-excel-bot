@@ -114,13 +114,16 @@ jobs:
 
 
   office-execute:
-    if: contains(github.event.head_commit.message, '[office execute]')
     runs-on: ubuntu-latest
     steps:
       - name: INTAKE
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if ! echo "${{ github.event.head_commit.message }}" | grep -Fq "[office execute]"; then
+            echo "Not an Office execute commit; nothing to do."
+            exit 0
+          fi
           gh issue comment 3 --repo "${{ github.repository }}" --body "## AI-OFFICE LIVE STATUS
 **RUNNING** — INTAKE
 Scope: `esv1312-crypto/pognali3` / `chatgpt-mvp-skeleton`.
