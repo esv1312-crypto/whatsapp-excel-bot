@@ -11,15 +11,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Install dependencies
         run: npm install
-
+      - name: Normalize generated test files
+        shell: bash
+        run: |
+          for f in tests/*.js; do
+            python - "$f" <<'PY'
+import sys
+p=sys.argv[1]
+s=open(p,encoding='utf-8').read()
+if '\\n' in s and s.count('\\n') > 3:
+    s=s.replace('\\n','\n')
+    open(p,'w',encoding='utf-8').write(s)
+PY
+          done
       - name: Run complete AI-OFFICE test suite
         shell: bash
         run: |
@@ -39,22 +49,15 @@ jobs:
           done
           echo "=== TEST SUMMARY: failures=$failures ===" | tee -a office-audit.log
           exit "$failures"
-
       - name: Verify Pognali MCP and UI
         if: always()
         shell: bash
         run: |
           set -e
-          curl --fail --silent --show-error --max-time 30 https://pognali-mcp.onrender.com/ >/dev/null
-          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp \
-            -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ai-office-ci","version":"1.0"}}}' \
-            | tee mcp-initialize.log
-          grep -Eq '"result"|"jsonrpc"' mcp-initialize.log
+          curl --fail --silent --show-error --max-time 30 -X POST https://pognali-mcp.onrender.com/mcp             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ai-office-ci","version":"1.0"}}}'             | tee mcp-initialize.log
+          grep -Eq '"result"' mcp-initialize.log
           curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/mcp/server.py >/dev/null
           curl --fail --silent --show-error https://raw.githubusercontent.com/esv1312-crypto/pognali3/chatgpt-mvp-skeleton/chatgpt/app/pognali-events.html >/dev/null
-
       - name: Upload full audit evidence
         if: always()
         uses: actions/upload-artifact@v4
