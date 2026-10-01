@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: ai-office-live-monitor
+    runtime: node
+    repo: https://github.com/esv1312-crypto/whatsapp-excel-bot
+    branch: main
+    buildCommand: npm install --prefix office-monitor
+    startCommand: npm start --prefix office-monitor
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-office-monitor-db
+          property: connectionString
+
+databases:
+  - name: ai-office-monitor-db
+    plan: free
+    region: frankfurt
