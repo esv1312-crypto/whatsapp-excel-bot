@@ -16,7 +16,7 @@ async function run(){
     {id:'qa',skills:['testing']}
   ];
   const events=[];
-  ['task.created','task.assigned','task.started','task.implemented','task.verifying','task.completed','task.failed','task.fixing','task.retest','task.recovered'].forEach(t=>bus.on(t,e=>events.push({type:t,taskId:e.taskId})));
+  ['task.created','task.assigned','task.started','task.implemented','task.verifying','task.completed','task.failed','task.fixing','task.retest','task.recovered'].forEach(t=>bus.on(t,e=>events.push({type:t,taskId:e.payload?.taskId})));
 
   const attempts=new Map();
   const runner=new office.ProjectRunner({
