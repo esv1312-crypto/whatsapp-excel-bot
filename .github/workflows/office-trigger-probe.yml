@@ -1,0 +1,23 @@
+name: AI-OFFICE Trigger Probe
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "message=${{ github.event.head_commit.message }}"
+          gh issue comment 3 --repo "${{ github.repository }}" --body "### AI-OFFICE TRIGGER PROBE
+**RUNNING** — push-trigger reached the runner.
+Commit: ${{ github.sha }}"
