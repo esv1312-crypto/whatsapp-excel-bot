@@ -35,6 +35,30 @@ async function run(){
   assert.equal(events[0][0],'stalled');
   assert.equal(events[1][0],'recovered');
 
+  const backgroundHeartbeat=new HeartbeatManager({eventBus:bus});
+  backgroundHeartbeat.start({
+    executionId:'worker:task-bg',
+    taskId:'task-bg',
+    status:'RUNNING',
+    lastHeartbeatAt:new Date(Date.now()-1000).toISOString()
+  });
+  let backgroundRecovered=false;
+  const backgroundWatchdog=new Watchdog({
+    timeoutMs:100,
+    intervalMs:10,
+    heartbeat:backgroundHeartbeat,
+    eventBus:bus,
+    onRecover:async execution=>{
+      backgroundRecovered=true;
+      backgroundHeartbeat.stop(execution.executionId,{status:'RECOVERED'});
+      return {action:'RESTART_EXECUTION',executionId:execution.executionId};
+    }
+  });
+  backgroundWatchdog.start();
+  await new Promise(resolve=>setTimeout(resolve,30));
+  backgroundWatchdog.stop();
+  assert.equal(backgroundRecovered,true);
+
   const fresh={
     executionId:'worker:task-2',
     taskId:'task-2',
