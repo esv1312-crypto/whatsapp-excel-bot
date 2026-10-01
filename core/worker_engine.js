@@ -60,13 +60,13 @@ class WorkerEngine {
   async _verifyTask(task){
     if(typeof this.orchestrator.verifyWithEvidence === 'function' && this.orchestrator.verificationController){
       const verification=await this.orchestrator.verifyWithEvidence(task.id);
-      if(!verification.evaluation.passed) this._prepareFix(task,verification);
+      if(!verification.verification?.pending && !verification.evaluation.passed) this._prepareFix(task,verification);
       return verification;
     }
     if(this.verifier){
       const verification=await this.verifier(task,this.orchestrator);
       this.orchestrator.verify(task.id,verification.passed,verification.details);
-      if(!verification.passed) this._prepareFix(task,{evaluation:verification});
+      if(!verification.pending && !verification.passed) this._prepareFix(task,{evaluation:verification});
       return verification;
     }
     return null;
