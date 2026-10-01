@@ -8,7 +8,7 @@ class HeartbeatManager {
 
   start(execution) {
     if(!execution || !execution.executionId) throw new Error('Execution is required');
-    const record={...execution,lastHeartbeatAt:new Date().toISOString()};
+    const record={...execution,lastHeartbeatAt:execution.lastHeartbeatAt||new Date().toISOString()};
     this.executions.set(record.executionId,record);
     this._emit('agent.heartbeat',record);
     return record;
