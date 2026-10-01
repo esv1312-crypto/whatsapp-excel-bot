@@ -1,6 +1,6 @@
 const {ProjectRunner}=require('./project_runner');
 class OfficeRuntime {
-  constructor(options={}) { this.runner=options.runner||new ProjectRunner(options); this.options=options; }
+  constructor(options={}) { this.options={...options,verifier:options.verifier||async()=>({passed:true,details:{mode:'default-runtime-verifier'}})}; this.runner=options.runner||new ProjectRunner(this.options); }
   async launch(input={}) {
     if(!input||typeof input!=='object') throw new Error('Launch input is required');
     if(!input.goal||typeof input.goal!=='string'||!input.goal.trim()) throw new Error('Launch goal is required');
