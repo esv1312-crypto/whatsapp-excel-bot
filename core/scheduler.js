@@ -29,7 +29,6 @@ class OfficeScheduler {
     while(this.cycles<this.maxCycles){
       const result=await this.cycle();
       history.push(result);
-      if(this.worker && typeof this.worker._isComplete==='function' && this.worker._isComplete()) return {history,cycles:this.cycles,complete:true};
       if(!result.progressed) break;
     }
     return {history,cycles:this.cycles,complete:!!history.at(-1)?.reason&&history.at(-1).reason==='PROJECT_COMPLETE'};
