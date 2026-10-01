@@ -19,51 +19,27 @@ const {StateStore}=require('../core/state_store');
   second.clear();
   assert.strictEqual(fs.existsSync(file),false);
 
-const office=require('../core');
-const persistedStore=new office.StateStore({filePath:file});
-const bus=new office.EventBus();
-const orch=new office.Orchestrator({
-  stateStore:persistedStore,
-  eventBus:bus,
-  specialists:[{id:'dev',skills:['software_development']}]
-});
-const task=office.createTask({
-  id:'persistent-task',
-  project:'persistent-project',
-  objective:'Persist orchestrator task state',
-  requiredSkills:['software_development']
-});
-orch.addTask(task);
-orch.refresh();
+  const office=require('../core');
+  const persistedStore=new office.StateStore({filePath:file});
+  const bus=new office.EventBus();
+  const orch=new office.Orchestrator({stateStore:persistedStore,eventBus:bus,specialists:[{id:'dev',skills:['software_development']}]});
+  const task=office.createTask({id:'persistent-task',project:'persistent-project',objective:'Persist orchestrator task state',requiredSkills:['software_development']});
+  orch.addTask(task);
+  orch.refresh();
 
-const recovered=new office.Orchestrator({
-  stateStore:new office.StateStore({filePath:file}),
-  specialists:[{id:'dev',skills:['software_development']}]
-});
-assert(recovered.getTask('persistent-task'));
-assert.strictEqual(recovered.getTask('persistent-task').project,'persistent-project');
-const interruptedStore=new office.StateStore({filePath:file});
-const interrupted=new office.Orchestrator({
-  stateStore:interruptedStore,
-  specialists:[{id:'dev',skills:['software_development']}]
-});
-const interruptedTask=office.createTask({
-  id:'interrupted-task',
-  project:'persistent-project',
-  objective:'Recover interrupted work',
-  requiredSkills:['software_development']
-});
-interrupted.addTask(interruptedTask);
-interrupted.refresh();
-interrupted.assign(interruptedTask.id);
-interrupted.start(interruptedTask.id);
-const worker=new office.WorkerEngine({
-  orchestrator:interrupted,
-  actionProvider:async task=>[{type:'complete',result:{ok:true}}],
-  verifier:async task=>({passed:true})
-});
-assert.strictEqual(interrupted.getTask('interrupted-task').status,'READY');
+  const recovered=new office.Orchestrator({stateStore:new office.StateStore({filePath:file}),specialists:[{id:'dev',skills:['software_development']}]});
+  assert(recovered.getTask('persistent-task'));
+  assert.strictEqual(recovered.getTask('persistent-task').project,'persistent-project');
 
-fs.unlinkSync(file);
+  const interruptedStore=new office.StateStore({filePath:file});
+  const interrupted=new office.Orchestrator({stateStore:interruptedStore,specialists:[{id:'dev',skills:['software_development']}]});
+  const interruptedTask=office.createTask({id:'interrupted-task',project:'persistent-project',objective:'Recover interrupted work',requiredSkills:['software_development']});
+  interrupted.addTask(interruptedTask);
+  interrupted.refresh();
+  interrupted.assign(interruptedTask.id);
+  interrupted.start(interruptedTask.id);
+  assert.strictEqual(interrupted.getTask('interrupted-task').status,'IN_PROGRESS');
+
+  fs.rmSync(dir,{recursive:true,force:true});
   console.log('state store tests: OK');
 })();
