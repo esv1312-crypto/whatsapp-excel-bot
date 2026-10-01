@@ -40,13 +40,14 @@ async function run(){
     orchestrator,
     watchdog,
     actionProvider:async()=>{executed++;return [{type:'complete',result:{ok:true}}]},
-    maxTicks:5
+    maxTicks:5,
+    verifier:async()=>({passed:true,details:{verifiedBy:'live-recovery-test'}})
   });
 
   const result=await worker.tick();
   assert.equal(result.progressed,true);
   assert.equal(executed,1);
-  assert.equal(orchestrator.getTask(task.id).status,TASK_STATUS.IMPLEMENTED);
+  assert.equal(orchestrator.getTask(task.id).status,TASK_STATUS.COMPLETED);
 
   const second=await worker.tick();
   assert.equal(second.progressed,true);
