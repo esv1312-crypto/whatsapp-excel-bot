@@ -121,7 +121,16 @@ class ProjectRunner {
       onCycle:this.options.onCycle
     });
 
-    const execution=await scheduler.run();
+    // Run the watchdog independently of worker ticks for the full execution window.
+    if(watchdog && typeof watchdog.start==='function') watchdog.start();
+
+    let execution;
+    try {
+      execution=await scheduler.run();
+    } finally {
+      if(watchdog && typeof watchdog.stop==='function') watchdog.stop();
+    }
+
     if(this.stateStore && typeof this.stateStore.update==='function') {
       this.stateStore.update({projects:{[boot.project.id]:boot.project}});
     }
