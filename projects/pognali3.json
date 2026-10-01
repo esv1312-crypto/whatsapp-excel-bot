@@ -1,34 +1,32 @@
 {
   "id": "pognali3",
-  "name": "Погнали",
+  "name": "Погнали GPT",
   "repository": "esv1312-crypto/pognali3",
-  "branch": "main",
-  "type": "android",
+  "branch": "chatgpt-mvp-skeleton",
+  "type": "chatgpt-app",
   "status": "ACTIVE",
-  "description": "Мобильное приложение для реальной социальной активности.",
+  "description": "ChatGPT-контур Погнали: реальные события, присоединение и создание событий.",
   "sourceRoots": [
-    "app/src",
-    "app/build.gradle",
-    "build.gradle",
-    "settings.gradle"
-  ],
-  "buildArtifacts": [
-    "app/build",
-    "build",
-    "*.apk",
-    "*.zip"
+    "chatgpt/core",
+    "chatgpt/mcp",
+    "chatgpt/app",
+    "chatgpt/README.md",
+    "chatgpt/contracts.md"
   ],
   "ciWorkflows": [
+    ".github/workflows/chatgpt-core-test.yml"
+  ],
+  "entrypoints": [
+    "chatgpt/mcp/server.py",
+    "chatgpt/app/pognali-events.html"
+  ],
+  "protectedContours": [
+    "app/",
     ".github/workflows/android.yml",
     ".github/workflows/android-ui-test.yml"
   ],
-  "entrypoints": [
-    "app/src/main/java/com/pognali/app/MainActivity.java",
-    "app/src/main/assets/pognali_final.html"
-  ],
   "discovery": {
-    "defaultBranch": "main",
-    "lastInspectedCommit": "d8eaf80106c365a27013adc0f35695b87b1f866b",
-    "lastInspectedAt": "2026-09-30T00:00:00Z"
+    "defaultBranch": "chatgpt-mvp-skeleton",
+    "lastInspectedAt": "2026-10-01T00:00:00Z"
   }
 }
