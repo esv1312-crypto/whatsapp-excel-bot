@@ -28,7 +28,9 @@ async function run(){
     status:'RUNNING',
     lastHeartbeatAt:new Date(Date.now()-1000).toISOString()
   };
+  console.log('DEBUG_WATCHDOG',JSON.stringify({timeoutMs:watchdog.timeoutMs,inspection:watchdog.inspect(stale),hasOnRecover:typeof watchdog.onRecover}));
   const result=await watchdog.recover(stale);
+  console.log('DEBUG_WATCHDOG_RESULT',JSON.stringify(result));
 
   assert.equal(result.status,'RECOVERED');
   assert.equal(recovered,true);
