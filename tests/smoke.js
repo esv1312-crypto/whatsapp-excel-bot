@@ -6,6 +6,7 @@ const {run:runMultiStateRecovery}=require('./multi_state_recovery');
 const {run:runWatchdogRecovery}=require('./watchdog_recovery');
 const {run:runLiveWatchdogRecovery}=require('./live_watchdog_recovery');
 const {run:runFullOfficeLifecycle}=require('./full_office_lifecycle');
+const {run:runFullE2ELifecycle}=require('./full_e2e_lifecycle');
 require('./tool_router_guardrails');
 require('./state_store');
 require('./event_store');
@@ -115,6 +116,7 @@ await runMultiStateRecovery();
 await runWatchdogRecovery();
 await runLiveWatchdogRecovery();
 await runFullOfficeLifecycle();
+await runFullE2ELifecycle();
 
 const memory=new office.CompanyMemory();
 memory.addLesson(lesson);
