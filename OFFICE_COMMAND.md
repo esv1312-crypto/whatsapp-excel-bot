@@ -1,1 +1,1 @@
-AI-OFFICE command marker. A commit containing [office execute] launches the one-command Office runner.
+AI-OFFICE command marker. The office audit workflow runs on pushes to main; the one-command orchestration marker is `[office execute]` and is retained for later dispatcher recovery.
